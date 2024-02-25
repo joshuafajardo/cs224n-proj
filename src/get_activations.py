@@ -1,6 +1,7 @@
 # get_activations.py
 
-import glob
+import pathlib
+
 import numpy as np
 import pandas as pd
 import torch
@@ -11,28 +12,33 @@ from tqdm import tqdm
 
 from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR
 
-ACTIVATIONS_DIR = "data/activations"
+ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations/original")
+AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations/augmented")
 LAYERS_TO_SAVE = (16, 20, 24, 28, 32)  # Same as used by Azaria and Mitchell
 STATEMENTS_BATCH_SIZE = 1  # TODO: set this back to 8 later
 
 def main():
   device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+  ORIGINAL_ACTIVATIONS_DIR.mkdir(parents=True, exist_ok=True)
+  AUGMENTED_ACTIVATIONS_DIR.mkdir(parents=True, exist_ok=True)
+
   tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
   tokenizer.pad_token = tokenizer.eos_token
   lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1").to(device)
   print("loaded model")
 
-  for original_csv in glob.glob(f"{ORIGINAL_DATASET_DIR}/*.csv"):
+  for original_csv in ORIGINAL_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {original_csv}")
     df = pd.read_csv(original_csv)
     activations = get_activations(df["statement"], lm, tokenizer, LAYERS_TO_SAVE)
-    save_activations(activations, original_csv)
+    torch.save(activations, ORIGINAL_ACTIVATIONS_DIR / f"{original_csv.stem}.pt")
   
-  for augmented_csv in glob.glob(f"{AUGMENTED_DATASET_DIR}/*.csv"):
+  for augmented_csv in AUGMENTED_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {augmented_csv}")
     df = pd.read_csv(activations, augmented_csv)
     activations = get_activations(df["augmented_statement"], lm, tokenizer, LAYERS_TO_SAVE)
+    torch.save(activations, AUGMENTED_ACTIVATIONS_DIR / f"{augmented_csv.stem}.pt")
 
 
 def get_activations(statements: pd.Series,
@@ -53,10 +59,6 @@ def get_activations(statements: pd.Series,
   for layer in layers:
     activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension
   return activations
-
-
-def save_activations(activations: dict, file_path: str) -> None:
-  torch.save(activations, f"{ACTIVATIONS_DIR}/{file_path}.pt")
 
 
 if __name__ == "__main__":
