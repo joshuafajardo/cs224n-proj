@@ -22,12 +22,18 @@ def main():
     print(activations)
 
 
-
 def get_activations(tokenized_batch: str, layer: int, model: AutoModelForCausalLM) -> torch.Tensor:
-  inputs = tokenizer(augmented_statements, return_tensors="pt")
-  outputs = model(**inputs)
+  outputs = model(**tokenized_batch)
   return outputs.hidden_states[layer]
 
 
-def load_topic(topic_name: str) -> pd.DataFrame:
+def tokenize_statements(statements: pd.Series, tokenizer: AutoTokenizer) -> torch.Tensor:
+  return tokenizer(statements.tolist(), padding=True, return_tensors="pt")
+
+
+def load_original_df(topic_name) -> pd.DataFrame:
+  return pd.read_csv(f"data/original_dataset/{topic_name}")
+
+
+def load_augmented_df(topic_name) -> pd.DataFrame:
   return pd.read_csv(f"data/augmented_dataset/{topic_name}")
