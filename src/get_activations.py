@@ -34,7 +34,8 @@ def get_activations(statements: pd.Series,
                     tokenizer: MistralForCausalLM,
                     layers: int) -> torch.Tensor:
   activations = []
-  for batched_statements in np.array_split(statements, STATEMENTS_BATCH_SIZE):
+  num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
+  for batched_statements in np.array_split(statements, num_batches):
     print("batch: ", batched_statements.tolist())
     print("tokenizing batch")
     tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, truncation=True, return_tensors="pt")
