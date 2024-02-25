@@ -35,8 +35,9 @@ def get_activations(statements: pd.Series,
                     layers: int) -> torch.Tensor:
   activations = []
   for batched_statements in np.array_split(statements, STATEMENTS_BATCH_SIZE):
+    print("batch: ", batched_statements.tolist())
     print("tokenizing batch")
-    tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
+    tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, truncation=True, return_tensors="pt")
     print("tokenized batch")
     for layer in layers:
       print("calling model")
