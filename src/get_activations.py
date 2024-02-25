@@ -32,14 +32,16 @@ def get_activations(statements: pd.Series,
                     model: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
                     layers: int) -> torch.Tensor:
-  activations = []
+  activations = {layer: [] for layer in layers}
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in np.array_split(statements, num_batches):
-    tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, truncation=True, return_tensors="pt")
+    tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
+    with torch.no_grad():
+      hidden_states = model(**tokenized_batch, output_hidden_states=True).hidden_states
     for layer in layers:
-      print(len(model(**tokenized_batch, output_hidden_states=True).hidden_states))
-      # activations += model(**tokenized_batch).hidden_states
-  # return outputs.hidden_states[layer]
+      last_token_indices = tokenized_batch["input_ids"].shape[1] - 1
+      activations[layer].extend(hidden_states[layer][:, last_token_indices, :].cpu().numpy().tolist())
+  return activations
 
 def load_original_df(topic_name) -> pd.DataFrame:
   return pd.read_csv(f"{ORIGINAL_DATASET_DIR}/{topic_name}")

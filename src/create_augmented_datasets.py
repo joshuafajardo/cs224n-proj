@@ -19,7 +19,7 @@ TOPIC_NAMES=[
 ]
 
 
-def main():
+def main():  # TODO: Unsure if we need to remove periods
   prefixes_df = load_prefixes()
 
   for topic_name in TOPIC_NAMES:
