@@ -1,39 +1,49 @@
 # get_activations.py
 
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, MistralForCausalLM
 
-SUPPORTED_MODELS = {
-  "mistral-7b": "mistralai/Mistral-7B-v0.1"
-}
+from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR, TOPIC_NAMES
 
+STATEMENTS_BATCH_SIZE = 32  # TODO: Find best batch size
 
 def main():
-  tokenizer = AutoTokenizer.from_pretrained(SUPPORTED_MODELS["mistral-7b"])
-  lm = AutoModelForCausalLM.from_pretrained(SUPPORTED_MODELS["mistral-7b"])
+  tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
+  tokenizer.pad_token = tokenizer.eos_token
+  lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
 
-  augmented_df = pd.read_csv("data/augmented_dataset/animals_true_false.csv")
-  augmented_df = augmented_df[["augmented_statement", "label"]]
-
-  for augmented_statement in augmented_df["augmented_statement"]:
-    activations = get_activations(augmented_statement)
+  for topic_name in TOPIC_NAMES:
+    df = load_original_df(topic_name)
+    activations = get_activations(df["statement"], lm, tokenizer, [28])
+    print(activations)
+  
+  for topic_name in TOPIC_NAMES:
+    df = load_augmented_df(topic_name)
+    activations = get_activations(df["augmented_statement"], lm, tokenizer, [28])
     print(activations)
 
 
-def get_activations(tokenized_batch: str, layer: int, model: AutoModelForCausalLM) -> torch.Tensor:
-  outputs = model(**tokenized_batch)
-  return outputs.hidden_states[layer]
-
-
-def tokenize_statements(statements: pd.Series, tokenizer: AutoTokenizer) -> torch.Tensor:
-  return tokenizer(statements.tolist(), padding=True, return_tensors="pt")
-
+def get_activations(statements: pd.Series,
+                    model: LlamaTokenizer,
+                    tokenizer: MistralForCausalLM,
+                    layers: int) -> torch.Tensor:
+  activations = []
+  for batched_statements in np.array_split(statements, STATEMENTS_BATCH_SIZE):
+    tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
+    for layer in layers:
+      print(model(**tokenized_batch).hidden_states)
+      # activations += model(**tokenized_batch).hidden_states
+  # return outputs.hidden_states[layer]
 
 def load_original_df(topic_name) -> pd.DataFrame:
-  return pd.read_csv(f"data/original_dataset/{topic_name}")
+  return pd.read_csv(f"{ORIGINAL_DATASET_DIR}/{topic_name}")
 
 
 def load_augmented_df(topic_name) -> pd.DataFrame:
-  return pd.read_csv(f"data/augmented_dataset/{topic_name}")
+  return pd.read_csv(f"{AUGMENTED_DATASET_DIR}/{topic_name}")
+
+if __name__ == "__main__":
+  main()

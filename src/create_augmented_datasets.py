@@ -20,18 +20,18 @@ TOPIC_NAMES=[
 
 
 def main():
-  prefixes = load_prefixes()
+  prefixes_df = load_prefixes()
 
   for topic_name in TOPIC_NAMES:
     topic_df = pd.read_csv(f"{ORIGINAL_DATASET_DIR}/{topic_name}")
-    augmented_df = add_prefixes(prefixes, topic_df, topic_name)
-    augmented_df = augmented_df[["augmented_statement", "label", "prefix", "statement"]]
+    augmented_df = create_augmented_df(prefixes_df, topic_df, topic_name)
     save_df_to_csv(augmented_df, f"{AUGMENTED_DATASET_DIR}/{topic_name}")
 
-def add_prefixes(prefixes: pd.DataFrame, topic_df: pd.DataFrame, topic_name: str) -> pd.DataFrame:
+def create_augmented_df(prefixes_df: pd.DataFrame, topic_df: pd.DataFrame, topic_name: str) -> pd.DataFrame:
   """"""  # TODO
   augmented_df = topic_df.copy()
-  augmented_df["augmented_statement"] = topic_df["statement"]
+  augmented_df.rename(columns={"statement": "original_statement"}, inplace=True)
+  augmented_df["augmented_statement"] = augmented_df["original_statement"]
 
   topics_to_decapitalize = {"animals_true_false.csv", "elements_true_false.csv"}
   if topic_name in topics_to_decapitalize:
@@ -41,9 +41,10 @@ def add_prefixes(prefixes: pd.DataFrame, topic_df: pd.DataFrame, topic_name: str
       regex=True
     )
 
-  augmented_df = prefixes.merge(augmented_df, how="cross")
+  augmented_df = prefixes_df.merge(augmented_df, how="cross")
   augmented_df["augmented_statement"] = augmented_df["prefix"] + " " \
                                           + augmented_df["augmented_statement"]
+  augmented_df = augmented_df[["augmented_statement", "label", "prefix", "original_statement"]]
   return augmented_df
 
 
