@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, Mi
 
 from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR, TOPIC_NAMES
 
-STATEMENTS_BATCH_SIZE = 4  # TODO: Find best batch size
+STATEMENTS_BATCH_SIZE = 16  # TODO: Find best batch size
 
 def main():
   tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
@@ -30,8 +30,8 @@ def main():
 
 
 def get_activations(statements: pd.Series,
-                    model: LlamaTokenizer,
-                    tokenizer: MistralForCausalLM,
+                    model: MistralForCausalLM,
+                    tokenizer: LlamaTokenizer,
                     layers: int) -> torch.Tensor:
   activations = []
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
@@ -42,7 +42,7 @@ def get_activations(statements: pd.Series,
     print("tokenized batch")
     for layer in layers:
       print("calling model")
-      print(model(**tokenized_batch).hidden_states)
+      print(model(**tokenized_batch, output_hidden_states=True).hidden_states)
       # activations += model(**tokenized_batch).hidden_states
   # return outputs.hidden_states[layer]
 
