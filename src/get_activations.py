@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, Mi
 
 from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR, TOPIC_NAMES
 
-STATEMENTS_BATCH_SIZE = 32  # TODO: Find best batch size
+STATEMENTS_BATCH_SIZE = 4  # TODO: Find best batch size
 
 def main():
   tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
