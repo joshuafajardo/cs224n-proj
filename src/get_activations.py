@@ -19,6 +19,7 @@ def main():
   for topic_name in TOPIC_NAMES:
     print(f"loading {topic_name}")
     df = load_original_df(topic_name)
+    print(f"loaded {topic_name}")
     activations = get_activations(df["statement"], lm, tokenizer, [28])
     print(activations)
   
@@ -34,6 +35,7 @@ def get_activations(statements: pd.Series,
                     layers: int) -> torch.Tensor:
   activations = []
   for batched_statements in np.array_split(statements, STATEMENTS_BATCH_SIZE):
+    print("tokenizing batch")
     tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
     for layer in layers:
       print(model(**tokenized_batch).hidden_states)
