@@ -30,13 +30,13 @@ def main():
 
   for original_csv in ORIGINAL_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {original_csv}")
-    df = pd.read_csv(original_csv)
+    df = pd.read_csv(str(original_csv))
     activations = get_activations(df["statement"], lm, tokenizer, LAYERS_TO_SAVE)
     torch.save(activations, ORIGINAL_ACTIVATIONS_DIR / f"{original_csv.stem}.pt")
   
   for augmented_csv in AUGMENTED_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {augmented_csv}")
-    df = pd.read_csv(activations, augmented_csv)
+    df = pd.read_csv(activations, str(augmented_csv))
     activations = get_activations(df["augmented_statement"], lm, tokenizer, LAYERS_TO_SAVE)
     torch.save(activations, AUGMENTED_ACTIVATIONS_DIR / f"{augmented_csv.stem}.pt")
 
