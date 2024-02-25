@@ -37,7 +37,7 @@ def get_activations(statements: pd.Series,
   for batched_statements in np.array_split(statements, num_batches):
     tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, truncation=True, return_tensors="pt")
     for layer in layers:
-      print(model(**tokenized_batch, output_hidden_states=True).hidden_states.shape)
+      print(len(model(**tokenized_batch, output_hidden_states=True).hidden_states))
       # activations += model(**tokenized_batch).hidden_states
   # return outputs.hidden_states[layer]
 
