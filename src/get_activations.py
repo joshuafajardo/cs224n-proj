@@ -15,7 +15,7 @@ from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DI
 ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations/original")
 AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations/augmented")
 LAYERS_TO_SAVE = (16, 20, 24, 28, 32)  # Same as used by Azaria and Mitchell
-STATEMENTS_BATCH_SIZE = 1  # TODO: set this back to 8 later
+STATEMENTS_BATCH_SIZE = 8
 
 def main():
   device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -54,7 +54,6 @@ def get_activations(statements: pd.Series,
     last_token_indices = tokenized_batch["input_ids"].shape[1] - 1
     for layer in layers:
       activations[layer].append(hidden_states[layer][:, last_token_indices, :].cpu())
-    break  # TODO: This is just for debugging.
 
   for layer in layers:
     activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension
