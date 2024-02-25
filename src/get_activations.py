@@ -14,8 +14,10 @@ def main():
   tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
   tokenizer.pad_token = tokenizer.eos_token
   lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
+  print("loaded model")
 
   for topic_name in TOPIC_NAMES:
+    print(f"loading {topic_name}")
     df = load_original_df(topic_name)
     activations = get_activations(df["statement"], lm, tokenizer, [28])
     print(activations)
