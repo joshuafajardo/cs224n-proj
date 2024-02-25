@@ -11,9 +11,10 @@ from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DI
 STATEMENTS_BATCH_SIZE = 16  # TODO: Find best batch size
 
 def main():
-  tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
+  device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+  tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1").to(device)
   tokenizer.pad_token = tokenizer.eos_token
-  lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
+  lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1").to(device)
   print("loaded model")
 
   for topic_name in TOPIC_NAMES:
