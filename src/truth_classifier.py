@@ -19,3 +19,4 @@ class TruthClassifier(nn.Module):
     x = self.relu(self.fc3(x))
     x = self.sigmoid(self.fc4(x))
     return x
+
