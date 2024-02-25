@@ -2,11 +2,12 @@
 
 """"""  # TODO: add docstring
 
+import pathlib
 import pandas as pd
 
-ORIGINAL_DATASET_DIR = "data/original_dataset"
-AUGMENTED_DATASET_DIR = "data/augmented_dataset"
-PREFIXES_FILE = "data/prefixes.csv"
+ORIGINAL_DATASET_DIR = pathlib.Path("data/original_dataset")
+AUGMENTED_DATASET_DIR = pathlib.Path("data/augmented_dataset")
+PREFIXES_FILE = pathlib.Path("data/prefixes.csv")
 
 TOPIC_NAMES=[
   # "facts_true_false.csv",
@@ -20,12 +21,13 @@ TOPIC_NAMES=[
 
 
 def main():  # TODO: Unsure if we need to remove periods
-  prefixes_df = load_prefixes()
+  prefixes_df = pd.read_csv(PREFIXES_FILE)
 
   for topic_name in TOPIC_NAMES:
-    topic_df = pd.read_csv(f"{ORIGINAL_DATASET_DIR}/{topic_name}")
+    topic_df = pd.read_csv(ORIGINAL_DATASET_DIR / topic_name)
     augmented_df = create_augmented_df(prefixes_df, topic_df, topic_name)
-    save_df_to_csv(augmented_df, f"{AUGMENTED_DATASET_DIR}/{topic_name}")
+    augmented_df.to_csv(AUGMENTED_DATASET_DIR / topic_name, index=False)
+
 
 def create_augmented_df(prefixes_df: pd.DataFrame, topic_df: pd.DataFrame, topic_name: str) -> pd.DataFrame:
   """"""  # TODO
@@ -46,16 +48,6 @@ def create_augmented_df(prefixes_df: pd.DataFrame, topic_df: pd.DataFrame, topic
                                           + augmented_df["augmented_statement"]
   augmented_df = augmented_df[["augmented_statement", "label", "prefix", "original_statement"]]
   return augmented_df
-
-
-def load_prefixes() -> pd.DataFrame:
-  """"""  # TODO
-  return pd.read_csv(PREFIXES_FILE)
-
-
-def save_df_to_csv(df: pd.DataFrame, file_path: str) -> None:
-  """"""  # TODO
-  df.to_csv(file_path, index=False)
 
 
 if __name__ == "__main__":
