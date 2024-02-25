@@ -12,7 +12,8 @@ STATEMENTS_BATCH_SIZE = 16  # TODO: Find best batch size
 
 def main():
   device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-  tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1").to(device)
+
+  tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
   tokenizer.pad_token = tokenizer.eos_token
   lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1").to(device)
   print("loaded model")
