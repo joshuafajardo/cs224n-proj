@@ -15,7 +15,7 @@ from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DI
 ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations/original")
 AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations/augmented")
 LAYERS_TO_SAVE = (16, 20, 24, 28, 32)  # Same as used by Azaria and Mitchell
-STATEMENTS_BATCH_SIZE = 8
+STATEMENTS_BATCH_SIZE = 4
 
 def main():
   device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
