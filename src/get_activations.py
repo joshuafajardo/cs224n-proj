@@ -31,23 +31,25 @@ def main():
   for original_csv in ORIGINAL_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {original_csv}")
     df = pd.read_csv(str(original_csv))
-    activations = get_activations(df["statement"], lm, tokenizer, LAYERS_TO_SAVE)
+    activations = get_activations(df["statement"], lm, tokenizer, LAYERS_TO_SAVE, device)
     torch.save(activations, ORIGINAL_ACTIVATIONS_DIR / f"{original_csv.stem}.pt")
   
   for augmented_csv in AUGMENTED_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {augmented_csv}")
     df = pd.read_csv(str(augmented_csv))
-    activations = get_activations(df["augmented_statement"], lm, tokenizer, LAYERS_TO_SAVE)
+    activations = get_activations(df["augmented_statement"], lm, tokenizer, LAYERS_TO_SAVE, device)
     torch.save(activations, AUGMENTED_ACTIVATIONS_DIR / f"{augmented_csv.stem}.pt")
 
 
 def get_activations(statements: pd.Series,
                     model: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
-                    layers: int) -> dict[int, torch.Tensor]:
+                    layers: int,
+                    device: str) -> dict[int, torch.Tensor]:
   activations = {layer: [] for layer in layers}
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in tqdm(np.array_split(statements, num_batches)):
+    batched_statements = batched_statements.to_device(device)
     tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
     with torch.no_grad():
       hidden_states = model(**tokenized_batch, output_hidden_states=True).hidden_states
