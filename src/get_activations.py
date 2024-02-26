@@ -12,8 +12,8 @@ from tqdm import tqdm
 
 from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR
 
-ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations/original")
-AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations/augmented")
+ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations_with_labels/original")
+AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations_with_labels/augmented")
 LAYERS_TO_SAVE = (16, 20, 24, 28, 32)  # Same as used by Azaria and Mitchell
 STATEMENTS_BATCH_SIZE = 4
 
@@ -32,12 +32,14 @@ def main():
     print(f"Getting activations for {original_csv}")
     df = pd.read_csv(str(original_csv))
     activations = get_activations(df["statement"], lm, tokenizer, LAYERS_TO_SAVE, device)
+    activations["label"] = df["label"]
     torch.save(activations, ORIGINAL_ACTIVATIONS_DIR / f"{original_csv.stem}.pt")
   
   for augmented_csv in AUGMENTED_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {augmented_csv}")
     df = pd.read_csv(str(augmented_csv))
     activations = get_activations(df["augmented_statement"], lm, tokenizer, LAYERS_TO_SAVE, device)
+    activations["label"] = df["label"]
     torch.save(activations, AUGMENTED_ACTIVATIONS_DIR / f"{augmented_csv.stem}.pt")
 
 
@@ -45,7 +47,7 @@ def get_activations(statements: pd.Series,
                     model: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
                     layers: int,
-                    device: str) -> dict[int, torch.Tensor]:
+                    device: torch.device) -> dict[int, torch.Tensor]:
   activations = {layer: [] for layer in layers}
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in tqdm(np.array_split(statements, num_batches)):
