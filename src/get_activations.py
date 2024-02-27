@@ -5,7 +5,6 @@ import pathlib
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, MistralForCausalLM
 
 from tqdm import tqdm
@@ -25,7 +24,8 @@ def main():
 
   tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
   tokenizer.pad_token = tokenizer.eos_token
-  lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1").to(device)
+  lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
+  lm = lm.to(device)
   print("loaded model")
 
   for original_csv in ORIGINAL_DATASET_DIR.glob("*.csv"):
