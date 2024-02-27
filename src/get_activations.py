@@ -1,4 +1,4 @@
-# get_activations.py
+# add_activations.py
 
 import pathlib
 
@@ -31,28 +31,32 @@ def main():
   for original_csv in ORIGINAL_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {original_csv}")
     df = pd.read_csv(str(original_csv))
-    activations = get_activations(df["statement"], lm, tokenizer, LAYERS_TO_SAVE, device)
-    activations["label"] = df["label"]
-    torch.save(activations, ORIGINAL_ACTIVATIONS_DIR / f"{original_csv.stem}.pt")
+    add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
+    torch.save(df, ORIGINAL_ACTIVATIONS_DIR / f"{original_csv.stem}.pt")
   
   for augmented_csv in AUGMENTED_DATASET_DIR.glob("*.csv"):
     print(f"Getting activations for {augmented_csv}")
     df = pd.read_csv(str(augmented_csv))
-    activations = get_activations(df["augmented_statement"], lm, tokenizer, LAYERS_TO_SAVE, device)
-    activations["label"] = df["label"]
-    torch.save(activations, AUGMENTED_ACTIVATIONS_DIR / f"{augmented_csv.stem}.pt")
+    add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
+    torch.save(df, AUGMENTED_ACTIVATIONS_DIR / f"{augmented_csv.stem}.pt")
 
 
-def get_activations(statements: pd.Series,
+def add_activations(df: pd.DataFrame,
                     model: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
                     layers: int,
                     device: torch.device) -> dict[int, torch.Tensor]:
+  """Add activations to the DataFrame for the given statements."""
   activations = {layer: [] for layer in layers}
+  if "augmented_statement" in df:
+    statements = df["augmented_statement"]
+  else:
+    statements = df["statement"]
+
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in tqdm(np.array_split(statements, num_batches)):
-    batched_statements = batched_statements.to_device(device)
     tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
+    tokenized_batch = tokenized_batch.to_device(device)
     with torch.no_grad():
       hidden_states = model(**tokenized_batch, output_hidden_states=True).hidden_states
     last_token_indices = tokenized_batch["input_ids"].shape[1] - 1
@@ -61,7 +65,7 @@ def get_activations(statements: pd.Series,
 
   for layer in layers:
     activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension
-  return activations
+  df["activations"] = activations
 
 
 if __name__ == "__main__":
