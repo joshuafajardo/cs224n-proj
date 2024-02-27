@@ -56,7 +56,7 @@ def add_activations(df: pd.DataFrame,
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in tqdm(np.array_split(statements, num_batches)):
     tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
-    tokenized_batch = tokenized_batch.to_device(device)
+    tokenized_batch = tokenized_batch.to(device)
     with torch.no_grad():
       hidden_states = model(**tokenized_batch, output_hidden_states=True).hidden_states
     last_token_indices = tokenized_batch["input_ids"].shape[1] - 1
