@@ -5,18 +5,31 @@ import torch
 import torch.nn as nn
 
 from datetime import datetime
+import pathlib
 from tqdm import tqdm
 
 from truth_classifier import TruthClassifier
 from get_activations import ORIGINAL_ACTIVATIONS_DIR, AUGMENTED_ACTIVATIONS_DIR, LAYERS_TO_SAVE
 
+BASE_RESULTS_DIR = pathlib.Path("results")
 BATCH_SIZE = 32
 
 def main():
   session_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-  pass
+  results_dir = BASE_RESULTS_DIR / session_name
+  results_dir.mkdir(parents=True, exist_ok=False)
 
-def train_test_each_topic(dataset_type: str):
+  if torch.cuda.is_available():
+    device = torch.device("cuda")
+  else:
+    device = torch.device("cpu")
+
+  train_test_each_topic("original", results_dir, device)
+
+def train_test_each_topic(
+    dataset_type: str,
+    results_dir: pathlib.Path,
+    device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
   """Mainly used for replicating Table 1 of Azaria and Mitchell's paper."""
   match dataset_type:
     case "original":
@@ -42,24 +55,30 @@ def train_test_each_topic(dataset_type: str):
     train_topics = [topics[name] for name in topics if name != test_topic_name]
 
     for layer in LAYERS_TO_SAVE:
-      truth_classifier = TruthClassifier()
+      input_size = train_topics[0]["activations"][layer].size(1)
+      truth_classifier = TruthClassifier(input_size).to(device)
 
       train_loader = create_dataloader(train_topics, layer)
-      train_truth_classifier(truth_classifier, train_loader)
+      train_truth_classifier(truth_classifier, train_loader, device)
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, train_loader)
 
       test_loader = create_dataloader([test_topic], layer)
       test_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, test_loader)
-  
+
+      torch.save(truth_classifier,
+                 results_dir / f"classifier_{test_topic_name}_layer{layer}.pt")
+      break  # TODO: Remove this line
+    break # TODO: Remove this line
+
   train_accuracies_df = pd.DataFrame(train_accuracies)
   test_accuracies_df = pd.DataFrame(test_accuracies)
-  return train_accuracies_df, test_accuracies_df
-  # TODO: save to CSV
+  train_accuracies_df.to_csv(results_dir / "train_accuracies.csv")
+  test_accuracies_df.to_csv(results_dir / "test_accuracies.csv")
 
 
-def create_dataloader(topics: list[dict], layer) -> torch.utils.data.DataSet:
+def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
   inputs = torch.cat([topic["activations"][layer] for topic in topics])
   labels = torch.cat([topic["label"] for topic in topics])
   return torch.utils.data.DataLoader(
@@ -69,6 +88,7 @@ def create_dataloader(topics: list[dict], layer) -> torch.utils.data.DataSet:
 
 def train_truth_classifier(truth_classifier: TruthClassifier,
                            loader: torch.utils.data.DataLoader,
+                           device: torch.device,
                            epochs: int = 5,
                            learning_rate: float = 0.01) -> None:
   loss_func = nn.BCELoss()
@@ -79,13 +99,17 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
     truth_classifier.train()
     print(f"Beginning epoch {epoch + 1}")
     for inputs, labels in tqdm(loader):
+      inputs = inputs.to(device)
+      labels = labels.to(device)
       truth_classifier.zero_grad()
       outputs = truth_classifier(inputs)
       curr_loss = loss_func(outputs, labels)
       curr_loss.backward()
       optimizer.step()
       epoch_loss += curr_loss.item()
+      break  # TODO: Remove this line
     print(f"Epoch {epoch + 1} training loss: {epoch_loss / len(loader)}")
+    break  # TODO: Remove this line
 
 
 def evaluate_truth_classifier(truth_classifier: TruthClassifier,
@@ -100,3 +124,7 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
   return correct / total
+
+
+if __name__ == "__main__":
+  main()
