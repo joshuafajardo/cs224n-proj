@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR
 
-ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations_with_labels/original")
-AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations_with_labels/augmented")
+ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations_mistral-7b/original")
+AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations_mistral-7b/augmented")
 LAYERS_TO_SAVE = (16, 20, 24, 28, 32)  # Same as used by Azaria and Mitchell
 STATEMENTS_BATCH_SIZE = 4
 
