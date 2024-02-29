@@ -93,12 +93,12 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
                            epochs: int = 5,
                            learning_rate: float = 0.01) -> None:
   truth_classifier = truth_classifier.to(device)
-  loss_func = nn.BCELoss()
+  truth_classifier.train()
   optimizer = torch.optim.Adam(truth_classifier.parameters(), lr=learning_rate)
+  loss_func = nn.BCELoss()
 
   for epoch in range(epochs):
     epoch_loss = 0.0
-    truth_classifier.train()
     print(f"Beginning epoch {epoch + 1}")
     for inputs, labels in tqdm(loader):
       inputs = inputs.to(device)
