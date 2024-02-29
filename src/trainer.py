@@ -62,7 +62,7 @@ def train_test_each_topic(
       truth_classifier = TruthClassifier(input_size).to(device)
 
       train_loader = create_dataloader(train_topics, layer)
-      train_truth_classifier(truth_classifier, train_loader, device)
+      train_truth_classifier(truth_classifier, train_loader, device, learning_rate=1)  # TODO: change
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, train_loader, device)
 
