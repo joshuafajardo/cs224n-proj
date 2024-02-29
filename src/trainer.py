@@ -104,6 +104,7 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
       inputs = inputs.to(device)
       labels = labels.to(device)
       truth_classifier.zero_grad()
+      truth_classifier = truth_classifier.to(device)  # TODO: Remove this line
       outputs = truth_classifier(inputs)
       curr_loss = loss_func(outputs, labels)
       curr_loss.backward()
