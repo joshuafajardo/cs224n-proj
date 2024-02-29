@@ -80,6 +80,7 @@ def train_test_each_topic(
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
   inputs = torch.cat([topic["activations"][layer] for topic in topics])
   labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
+  print("sample inputs: ", inputs[0])
   labels = labels.unsqueeze(1).float()
   return torch.utils.data.DataLoader(
     torch.utils.data.TensorDataset(inputs, labels),
@@ -100,6 +101,8 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
     epoch_loss = 0.0
     print(f"Beginning epoch {epoch + 1}")
     for inputs, labels in tqdm(loader):
+      print("inputs: ", inputs)
+      print("labels: ", labels)
       inputs = inputs.to(device)
       labels = labels.to(device)
       truth_classifier.zero_grad()
@@ -124,6 +127,7 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       labels = labels.to(device)
       outputs = truth_classifier(inputs)
       predictions = (outputs > 0.5).float()
+      print("predictions: ", predictions)
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
   return correct / total
