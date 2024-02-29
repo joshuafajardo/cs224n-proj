@@ -54,8 +54,10 @@ def train_test_each_topic(
   for test_topic_name in topics:
     test_topic = topics[test_topic_name]
     train_topics = [topics[name] for name in topics if name != test_topic_name]
+    print("Topic: ", test_topic_name)
 
     for layer in LAYERS_TO_SAVE:
+      print(f"Layer: {layer}")
       input_size = train_topics[0]["activations"][layer].size(1)
       truth_classifier = TruthClassifier(input_size).to(device)
 
