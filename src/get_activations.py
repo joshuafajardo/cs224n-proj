@@ -42,7 +42,7 @@ def main():
 
 
 def add_activations(df: pd.DataFrame,
-                    model: MistralForCausalLM,
+                    llm: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
                     layers: int,
                     device: torch.device) -> dict[int, torch.Tensor]:
@@ -53,17 +53,19 @@ def add_activations(df: pd.DataFrame,
   else:
     statements = df["statement"]
 
+  llm.eval()
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in tqdm(np.array_split(statements, num_batches)):
     tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
     tokenized_batch = tokenized_batch.to(device)
     with torch.no_grad():
-      hidden_states = model(**tokenized_batch, output_hidden_states=True).hidden_states
-    last_token_indices = tokenized_batch["input_ids"].shape[1] - 1
+      hidden_states = llm(**tokenized_batch, output_hidden_states=True).hidden_states
+    last_token_indices = torch.sum(tokenized_batch.attention_mask, dim=1) - 1
     for layer in layers:
       print(f"hidden states: {hidden_states[layer][:, last_token_indices, :].cpu()}")
       print(f"hidden states: {hidden_states[layer].cpu()}")
       activations[layer].append(hidden_states[layer][:, last_token_indices, :].cpu())
+    break  # TODO: Remove
 
   for layer in layers:
     activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension
