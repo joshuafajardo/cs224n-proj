@@ -125,7 +125,6 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       labels = labels.to(device)
       outputs = truth_classifier(inputs)
       predictions = (outputs > 0.5).float()
-      print("predictions: ", predictions)
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
   return correct / total
