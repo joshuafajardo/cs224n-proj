@@ -79,7 +79,7 @@ def train_test_each_topic(
 
 
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
-  print(torch["activations"][layer].shape)
+  print(topics.values[0]["activations"][layer].shape)
   inputs = torch.cat([topic["activations"][layer] for topic in topics])
   labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
   return torch.utils.data.DataLoader(
