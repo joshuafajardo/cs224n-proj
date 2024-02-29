@@ -26,6 +26,7 @@ def main():
 
   train_test_each_topic("original", results_dir, device)
 
+
 def train_test_each_topic(
     dataset_type: str,
     results_dir: pathlib.Path,
@@ -59,7 +60,7 @@ def train_test_each_topic(
       truth_classifier = TruthClassifier(input_size).to(device)
 
       train_loader = create_dataloader(train_topics, layer)
-      train_truth_classifier(truth_classifier, train_loader, device)
+      train_truth_classifier(truth_classifier, train_loader)
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, train_loader)
 
@@ -89,11 +90,10 @@ def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
 
 def train_truth_classifier(truth_classifier: TruthClassifier,
                            loader: torch.utils.data.DataLoader,
-                           device: torch.device,
                            epochs: int = 5,
                            learning_rate: float = 0.01) -> None:
-  truth_classifier = truth_classifier.to(device)
   truth_classifier.train()
+  device = truth_classifier.device
   optimizer = torch.optim.Adam(truth_classifier.parameters(), lr=learning_rate)
   loss_func = nn.BCELoss()
 
@@ -104,7 +104,6 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
       inputs = inputs.to(device)
       labels = labels.to(device)
       truth_classifier.zero_grad()
-      truth_classifier = truth_classifier.to(device)  # TODO: Remove this line
       outputs = truth_classifier(inputs)
       curr_loss = loss_func(outputs, labels)
       curr_loss.backward()
@@ -118,10 +117,13 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
 def evaluate_truth_classifier(truth_classifier: TruthClassifier,
                               loader: torch.utils.data.DataLoader) -> None:
   truth_classifier.eval()
+  device = truth_classifier.device
   correct = 0
   total = 0
   with torch.no_grad():
     for inputs, labels in loader:
+      inputs = inputs.to(device)
+      labels = labels.to(device)
       outputs = truth_classifier(inputs)
       predictions = (outputs > 0.5).float()
       total += labels.size(0)
