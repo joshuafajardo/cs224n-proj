@@ -56,15 +56,20 @@ def add_activations(df: pd.DataFrame,
   llm.eval()
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in tqdm(np.array_split(statements, num_batches)):
-    tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
+    tokenized_batch = tokenizer(batched_statements.tolist(),
+                                padding=True,
+                                return_tensors="pt")
     tokenized_batch = tokenized_batch.to(device)
     with torch.no_grad():
-      hidden_states = llm(**tokenized_batch, output_hidden_states=True).hidden_states
+      hidden_states = \
+        llm(**tokenized_batch, output_hidden_states=True).hidden_states
+
+    # For every statement, we only want the activations of the last token.
+    statement_indices = torch.arange(len(batched_statements))
     last_token_indices = torch.sum(tokenized_batch.attention_mask, dim=1) - 1
     for layer in layers:
-      print(f"hidden states: {hidden_states[layer][:, last_token_indices, :].cpu()}")
-      print(f"hidden states: {hidden_states[layer].cpu()}")
-      activations[layer].append(hidden_states[layer][:, last_token_indices, :].cpu())
+      activations[layer].append(
+        hidden_states[layer][statement_indices, last_token_indices, :].cpu())
     break  # TODO: Remove
 
   for layer in layers:
