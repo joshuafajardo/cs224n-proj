@@ -101,8 +101,6 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
     epoch_loss = 0.0
     print(f"Beginning epoch {epoch + 1}")
     for inputs, labels in tqdm(loader):
-      print("inputs: ", inputs)
-      print("labels: ", labels)
       inputs = inputs.to(device)
       labels = labels.to(device)
       truth_classifier.zero_grad()
