@@ -60,13 +60,13 @@ def train_test_each_topic(
       truth_classifier = TruthClassifier(input_size).to(device)
 
       train_loader = create_dataloader(train_topics, layer)
-      train_truth_classifier(truth_classifier, train_loader)
+      train_truth_classifier(truth_classifier, train_loader, device)
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
-        truth_classifier, train_loader)
+        truth_classifier, train_loader, device)
 
       test_loader = create_dataloader([test_topic], layer)
       test_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
-        truth_classifier, test_loader)
+        truth_classifier, test_loader, device)
 
       torch.save(truth_classifier,
                  results_dir / f"classifier_{test_topic_name}_layer{layer}.pt")
@@ -90,8 +90,10 @@ def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
 
 def train_truth_classifier(truth_classifier: TruthClassifier,
                            loader: torch.utils.data.DataLoader,
+                           device: torch.device,
                            epochs: int = 5,
                            learning_rate: float = 0.01) -> None:
+  truth_classifier.to(device)
   truth_classifier.train()
   device = truth_classifier.get_device()
   optimizer = torch.optim.Adam(truth_classifier.parameters(), lr=learning_rate)
@@ -115,9 +117,10 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
 
 
 def evaluate_truth_classifier(truth_classifier: TruthClassifier,
-                              loader: torch.utils.data.DataLoader) -> None:
+                              loader: torch.utils.data.DataLoader,
+                              device: torch.device) -> None:
+  truth_classifier.to(device)
   truth_classifier.eval()
-  device = truth_classifier.get_device()
   correct = 0
   total = 0
   with torch.no_grad():
