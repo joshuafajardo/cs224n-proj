@@ -68,7 +68,6 @@ def add_activations(df: pd.DataFrame,
     break  # TODO: Remove
 
   for layer in layers:
-    print[activations[layer].shape]
     activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension
     print(f"layer {layer} activations: {activations[layer]}")
   print(activations)
