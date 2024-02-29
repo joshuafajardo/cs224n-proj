@@ -70,12 +70,9 @@ def add_activations(df: pd.DataFrame,
     for layer in layers:
       activations[layer].append(
         hidden_states[layer][statement_indices, last_token_indices, :].cpu())
-    break  # TODO: Remove
 
   for layer in layers:
     activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension
-    print(f"layer {layer} activations: {activations[layer]}")
-  print(activations)
   df["activations"] = activations
 
 
