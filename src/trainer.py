@@ -92,7 +92,7 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
                            device: torch.device,
                            epochs: int = 5,
                            learning_rate: float = 0.01) -> None:
-  truth_classifier.to(device)
+  truth_classifier = truth_classifier.to(device)
   loss_func = nn.BCELoss()
   optimizer = torch.optim.Adam(truth_classifier.parameters(), lr=learning_rate)
 
