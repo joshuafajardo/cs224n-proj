@@ -80,7 +80,6 @@ def train_test_each_topic(
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
   inputs = torch.cat([topic["activations"][layer] for topic in topics])
   labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
-  print("sample inputs: ", inputs[0])
   labels = labels.unsqueeze(1).float()
   return torch.utils.data.DataLoader(
     torch.utils.data.TensorDataset(inputs, labels),
