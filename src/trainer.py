@@ -70,8 +70,6 @@ def train_test_each_topic(
 
       torch.save(truth_classifier,
                  results_dir / f"classifier_{test_topic_name}_layer{layer}.pt")
-      break  # TODO: Remove this line
-    break # TODO: Remove this line
 
   train_accuracies_df = pd.DataFrame(train_accuracies)
   test_accuracies_df = pd.DataFrame(test_accuracies)
@@ -110,9 +108,7 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
       curr_loss.backward()
       optimizer.step()
       epoch_loss += curr_loss.item()
-      break  # TODO: Remove this line
     print(f"Epoch {epoch + 1} training loss: {epoch_loss / len(loader)}")
-    break  # TODO: Remove this line
 
 
 def evaluate_truth_classifier(truth_classifier: TruthClassifier,
