@@ -62,7 +62,7 @@ def add_activations(df: pd.DataFrame,
     last_token_indices = tokenized_batch["input_ids"].shape[1] - 1
     for layer in layers:
       print(f"hidden states: {hidden_states[layer][:, last_token_indices, :].cpu()}")
-      print(f"hidden states: {hidden_states[layer].cpu()")
+      print(f"hidden states: {hidden_states[layer].cpu()}")
       activations[layer].append(hidden_states[layer][:, last_token_indices, :].cpu())
 
   for layer in layers:
