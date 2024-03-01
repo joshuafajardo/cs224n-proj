@@ -34,6 +34,7 @@ def main():
       df = pd.read_csv(str(topic_csv))
       add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
       torch.save(df, curr_activation_dir / f"{topic_csv.stem}.pt")
+  print(f"Last dataframe created: {df}")
 
 def add_activations(df: pd.DataFrame,
                     llm: MistralForCausalLM,
@@ -66,8 +67,8 @@ def add_activations(df: pd.DataFrame,
         hidden_states[layer][statement_indices, last_token_indices, :].cpu())
 
   for layer in layers:
-    activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension
-  df["activations"] = activations
+    activations[layer] = list(torch.cat(activations[layer], dim=0))
+    df[f"activations_L{layer}"] = activations[layer]
 
 
 if __name__ == "__main__":
