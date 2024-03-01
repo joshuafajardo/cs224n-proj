@@ -73,8 +73,9 @@ def train_eval_augmented(
     train_loader = create_dataloader(train_topics, layer)
     train_truth_classifier(
       truth_classifier, train_loader, device)  # TODO: change
-    train_accuracies[layer] = evaluate_truth_classifier(
-      truth_classifier, train_loader, device)
+    train_accuracies[layer] = [
+      evaluate_truth_classifier(truth_classifier, train_loader, device)
+    ]
 
     for name, test_topic in test_topics.items():
       test_loader = create_dataloader([test_topic], layer)
