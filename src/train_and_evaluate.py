@@ -66,9 +66,8 @@ def train_eval_augmented(
   
   for layer in LAYERS_TO_SAVE:
     print(f"Layer: {layer}")
-    sample_topic = next(iter(train_topics.values()))
-    input_size = sample_topic["activations"][layer].size(1)
 
+    input_size = train_topics[0]["activations"][layer].size(1)
     truth_classifier = TruthClassifier(input_size).to(device)
 
     train_loader = create_dataloader(train_topics, layer)
