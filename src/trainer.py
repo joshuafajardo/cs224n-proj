@@ -16,20 +16,20 @@ BATCH_SIZE = 32
 
 def main():
   session_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-  results_dir = BASE_RESULTS_DIR / session_name
-  results_dir.mkdir(parents=True, exist_ok=False)
+  session_dir = BASE_RESULTS_DIR / session_name
+  session_dir.mkdir(parents=True, exist_ok=False)
 
   if torch.cuda.is_available():
     device = torch.device("cuda")
   else:
     device = torch.device("cpu")
 
-  train_test_each_topic("original", results_dir, device)
+  train_test_each_topic("original", session_dir, device)
 
 
 def train_test_each_topic(
     dataset_type: str,
-    results_dir: pathlib.Path,
+    session_dir: pathlib.Path,
     device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
   """Mainly used for replicating Table 1 of Azaria and Mitchell's paper."""
   match dataset_type:
@@ -39,6 +39,8 @@ def train_test_each_topic(
       activations_dir = AUGMENTED_ACTIVATIONS_DIR
     case _:
       raise ValueError(f"Invalid dataset type: {dataset_type}")
+  
+  results_dir = session_dir / dataset_type
 
   topics = {}
   for activation_file in activations_dir.glob("*.pt"):
