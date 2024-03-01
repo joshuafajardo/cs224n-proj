@@ -5,17 +5,16 @@ import pathlib
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, MistralForCausalLM
 
 from tqdm import tqdm
 
 from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR
 
-ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations_with_labels/original")
-AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations_with_labels/augmented")
+ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations_mistral-7b/original")
+AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations_mistral-7b/augmented")
 LAYERS_TO_SAVE = (16, 20, 24, 28, 32)  # Same as used by Azaria and Mitchell
-STATEMENTS_BATCH_SIZE = 4
+STATEMENTS_BATCH_SIZE = 32
 
 def main():
   device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -25,7 +24,8 @@ def main():
 
   tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
   tokenizer.pad_token = tokenizer.eos_token
-  lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1").to(device)
+  lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
+  lm = lm.to(device)
   print("loaded model")
 
   for original_csv in ORIGINAL_DATASET_DIR.glob("*.csv"):
@@ -42,7 +42,7 @@ def main():
 
 
 def add_activations(df: pd.DataFrame,
-                    model: MistralForCausalLM,
+                    llm: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
                     layers: int,
                     device: torch.device) -> dict[int, torch.Tensor]:
@@ -53,15 +53,23 @@ def add_activations(df: pd.DataFrame,
   else:
     statements = df["statement"]
 
+  llm.eval()
   num_batches = np.ceil(len(statements) / STATEMENTS_BATCH_SIZE)
   for batched_statements in tqdm(np.array_split(statements, num_batches)):
-    tokenized_batch = tokenizer(batched_statements.tolist(), padding=True, return_tensors="pt")
-    tokenized_batch = tokenized_batch.to_device(device)
+    tokenized_batch = tokenizer(batched_statements.tolist(),
+                                padding=True,
+                                return_tensors="pt")
+    tokenized_batch = tokenized_batch.to(device)
     with torch.no_grad():
-      hidden_states = model(**tokenized_batch, output_hidden_states=True).hidden_states
-    last_token_indices = tokenized_batch["input_ids"].shape[1] - 1
+      hidden_states = \
+        llm(**tokenized_batch, output_hidden_states=True).hidden_states
+
+    # For every statement, we only want the activations of the last token.
+    statement_indices = torch.arange(len(batched_statements))
+    last_token_indices = torch.sum(tokenized_batch.attention_mask, dim=1) - 1
     for layer in layers:
-      activations[layer].append(hidden_states[layer][:, last_token_indices, :].cpu())
+      activations[layer].append(
+        hidden_states[layer][statement_indices, last_token_indices, :].cpu())
 
   for layer in layers:
     activations[layer] = torch.cat(activations[layer], dim=0)  # Concatenate along the batch dimension

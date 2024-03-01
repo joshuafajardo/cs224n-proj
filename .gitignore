@@ -1,1 +1,1 @@
-data/activations_with_labels/*/*.pt
+data/activations_*/*/*.pt
