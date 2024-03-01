@@ -68,7 +68,11 @@ def add_activations(df: pd.DataFrame,
 
   for layer in layers:
     activations[layer] = list(torch.cat(activations[layer], dim=0))
-    df[f"activations_L{layer}"] = activations[layer]
+    df[layer_to_colname(layer)] = activations[layer]
+
+
+def layer_to_colname(layer: int) -> str:
+  return f"activations_L{layer}"
 
 
 if __name__ == "__main__":

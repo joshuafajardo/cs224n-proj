@@ -10,7 +10,7 @@ import pathlib
 from tqdm import tqdm
 
 from truth_classifier import TruthClassifier
-from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE
+from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
 BATCH_SIZE = 32
@@ -53,6 +53,8 @@ def train_eval_augmented(
   train_accuracies = {}
   for layer in LAYERS_TO_SAVE:
     train_accuracies[layer] = -1
+  # Find the input size for the truth classifier
+  input_size = train_topics[0][layer_to_colname(layer)][0].shape[0]
   
   # Set up test topics/results
   test_topics = {}
@@ -69,8 +71,6 @@ def train_eval_augmented(
       for layer in LAYERS_TO_SAVE:
         test_accuracies[name][prefix][layer] = -1
   
-  # Find the input size for the truth classifier
-  input_size = train_topics[0]["activations"][layer].size(1)
 
   # Train and evaluate truth classifiers
   for layer in LAYERS_TO_SAVE:
@@ -124,7 +124,7 @@ def train_eval_original(
 
     for layer in LAYERS_TO_SAVE:
       print(f"Layer: {layer}")
-      input_size = train_topics[0]["activations"][layer].size(1)
+      input_size = train_topics[0][layer_to_colname(layer)][0].shape[0]
       truth_classifier = TruthClassifier(input_size).to(device)
 
       train_loader = create_dataloader(train_topics, layer)
@@ -146,9 +146,7 @@ def train_eval_original(
 
 
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
-  if len(topics) == 1:
-    print(topics[0]["activations"][layer].shape)
-  inputs = torch.cat([topic["activations"][layer] for topic in topics])
+  inputs = torch.cat([topic[layer_to_colname(layer)] for topic in topics])
   labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
   labels = labels.unsqueeze(1).float()
   return torch.utils.data.DataLoader(
