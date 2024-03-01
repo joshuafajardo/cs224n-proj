@@ -147,12 +147,9 @@ def train_eval_original(
 
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
   inputs = pd.concat([topic[layer_to_colname(layer)] for topic in topics])
-  inputs = torch.cat(list(inputs.values))
+  inputs = torch.stack(list(inputs.values))
   labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
   labels = labels.unsqueeze(1).float()
-
-  print(inputs.shape)
-  print(labels.shape)
 
   return torch.utils.data.DataLoader(
     torch.utils.data.TensorDataset(inputs, labels),
