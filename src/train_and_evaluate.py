@@ -45,9 +45,10 @@ def main(dataset: str) -> None:
 def train_eval_augmented(
     results_dir: pathlib.Path,
     device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
-  train_topics = {}
+  # Store train topics in a list and test topics in a dictionary.
+  train_topics = []
   for activation_file in ORIGINAL_ACTIVATIONS_DIR.glob("*.pt"):
-    train_topics[activation_file.stem] = torch.load(activation_file)
+    train_topics.append(torch.load(activation_file))
   
   test_topics = {}
   for activation_file in AUGMENTED_ACTIVATIONS_DIR.glob("*.pt"):
@@ -127,8 +128,6 @@ def train_eval_original(
 
 
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
-  sample_topic = next(iter(topics.values()))
-  print(sample_topic)
   inputs = torch.cat([topic["activations"][layer] for topic in topics])
   labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
   labels = labels.unsqueeze(1).float()
