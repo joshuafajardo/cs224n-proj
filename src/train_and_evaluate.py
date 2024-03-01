@@ -27,6 +27,8 @@ def main(dataset: str) -> None:
 
   original_result_dir = session_dir / dataset / "original"
   augmented_result_dir = session_dir / dataset / "augmented"
+  original_result_dir.mkdir(parents=True, exist_ok=True)
+  augmented_result_dir.mkdir(parents=True, exist_ok=True)
 
   match dataset:
     case "all":
