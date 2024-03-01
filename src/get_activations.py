@@ -9,18 +9,16 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer, Mi
 
 from tqdm import tqdm
 
-from create_augmented_datasets import ORIGINAL_DATASET_DIR, AUGMENTED_DATASET_DIR
+from create_augmented_datasets import DATASETS_DIR
 
-ORIGINAL_ACTIVATIONS_DIR = pathlib.Path("data/activations_mistral-7b/original")
-AUGMENTED_ACTIVATIONS_DIR = pathlib.Path("data/activations_mistral-7b/augmented")
+ACTIVATIONS_DIR = pathlib.Path("data/activations")
 LAYERS_TO_SAVE = (16, 20, 24, 28, 32)  # Same as used by Azaria and Mitchell
 STATEMENTS_BATCH_SIZE = 32
 
 def main():
   device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-  ORIGINAL_ACTIVATIONS_DIR.mkdir(parents=True, exist_ok=True)
-  AUGMENTED_ACTIVATIONS_DIR.mkdir(parents=True, exist_ok=True)
+  ACTIVATIONS_DIR.mkdir(parents=True, exist_ok=True)
 
   tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
   tokenizer.pad_token = tokenizer.eos_token
@@ -28,18 +26,14 @@ def main():
   lm = lm.to(device)
   print("loaded model")
 
-  for original_csv in ORIGINAL_DATASET_DIR.glob("*.csv"):
-    print(f"Getting activations for {original_csv}")
-    df = pd.read_csv(str(original_csv))
-    add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
-    torch.save(df, ORIGINAL_ACTIVATIONS_DIR / f"{original_csv.stem}.pt")
-  
-  for augmented_csv in AUGMENTED_DATASET_DIR.glob("*.csv"):
-    print(f"Getting activations for {augmented_csv}")
-    df = pd.read_csv(str(augmented_csv))
-    add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
-    torch.save(df, AUGMENTED_ACTIVATIONS_DIR / f"{augmented_csv.stem}.pt")
-
+  for dataset in ["original", "augmented"]:
+    curr_activation_dir = ACTIVATIONS_DIR / dataset
+    curr_activation_dir.mkdir(parents=True, exist_ok=True)
+    for topic_csv in (DATASETS_DIR / dataset).glob("*.csv"):
+      print(f"Getting activations for {topic_csv}")
+      df = pd.read_csv(str(topic_csv))
+      add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
+      torch.save(df, curr_activation_dir / f"{topic_csv.stem}.pt")
 
 def add_activations(df: pd.DataFrame,
                     llm: MistralForCausalLM,

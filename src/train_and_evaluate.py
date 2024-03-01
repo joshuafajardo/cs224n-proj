@@ -10,7 +10,7 @@ import pathlib
 from tqdm import tqdm
 
 from truth_classifier import TruthClassifier
-from get_activations import ORIGINAL_ACTIVATIONS_DIR, AUGMENTED_ACTIVATIONS_DIR, LAYERS_TO_SAVE
+from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE
 
 BASE_RESULTS_DIR = pathlib.Path("results")
 BATCH_SIZE = 32
@@ -47,11 +47,11 @@ def train_eval_augmented(
     device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
   # Store train topics in a list and test topics in a dictionary.
   train_topics = []
-  for activation_file in ORIGINAL_ACTIVATIONS_DIR.glob("*.pt"):
+  for activation_file in (ACTIVATIONS_DIR / "original").glob("*.pt"):
     train_topics.append(torch.load(activation_file))
   
   test_topics = {}
-  for activation_file in AUGMENTED_ACTIVATIONS_DIR.glob("*.pt"):
+  for activation_file in (ACTIVATIONS_DIR / "augmented").glob("*.pt"):
     test_topics[activation_file.stem] = torch.load(activation_file)
   
   # Note the difference between how we save the train accuracies vs the test
@@ -92,7 +92,7 @@ def train_eval_original(
     device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
   """Mainly used for replicating Table 1 of Azaria and Mitchell's paper."""
   topics = {}
-  for activation_file in ORIGINAL_ACTIVATIONS_DIR.glob("*.pt"):
+  for activation_file in (ACTIVATIONS_DIR / "original").glob("*.pt"):
     topics[activation_file.stem] = torch.load(activation_file)
   
   train_accuracies = {}
