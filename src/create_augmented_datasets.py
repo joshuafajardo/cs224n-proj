@@ -20,14 +20,14 @@ TOPIC_NAMES=[
 
 
 def main():
-  DATASETS_DIR.mkdir(parents=True, exist_ok=True)
-
   prefixes_df = pd.read_csv(PREFIXES_FILE)
+  augmented_dir = DATASETS_DIR / "augmented"
+  augmented_dir.mkdir(parents=True, exist_ok=True)
 
   for topic_name in TOPIC_NAMES:
     topic_df = pd.read_csv(DATASETS_DIR / "original" / topic_name)
     augmented_df = create_augmented_df(prefixes_df, topic_df, topic_name)
-    augmented_df.to_csv(DATASETS_DIR / "augmented" / topic_name)
+    augmented_df.to_csv(augmented_dir / topic_name)
 
 
 def create_augmented_df(prefixes_df: pd.DataFrame, topic_df: pd.DataFrame, topic_name: str) -> pd.DataFrame:
