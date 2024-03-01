@@ -17,8 +17,8 @@ BATCH_SIZE = 32
 
 def main(dataset: str) -> None:
   session_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-  results_dir = BASE_RESULTS_DIR / session_name
-  results_dir.mkdir(parents=True, exist_ok=False)
+  session_dir = BASE_RESULTS_DIR / session_name
+  session_dir.mkdir(parents=True, exist_ok=False)
 
   if torch.cuda.is_available():
     device = torch.device("cuda")
