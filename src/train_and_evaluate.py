@@ -149,6 +149,8 @@ def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
   inputs = torch.cat([topic["activations"][layer] for topic in topics])
   labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
   labels = labels.unsqueeze(1).float()
+  print(inputs.shape)
+  print(labels.shape)
   return torch.utils.data.DataLoader(
     torch.utils.data.TensorDataset(inputs, labels),
     batch_size=BATCH_SIZE, shuffle=True)
