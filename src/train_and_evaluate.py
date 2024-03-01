@@ -46,26 +46,25 @@ def train_eval_augmented(
     results_dir: pathlib.Path,
     device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
   # Set up train topics/results
-  train_topics = []
+  all_train_topics = {}
   for activation_file in (ACTIVATIONS_DIR / "original").glob("*.pt"):
-    train_topics.append(torch.load(activation_file))
-  
-  train_accuracies = {}
-  for layer in LAYERS_TO_SAVE:
-    train_accuracies[layer] = -1
-  # Find the input size for the truth classifier
-  input_size = train_topics[0][layer_to_colname(layer)][0].shape[0]
-  
+    all_train_topics[activation_file.stem] = torch.load(activation_file)
+
   # Set up test topics/results
-  test_topics = {}
+  all_test_topics = {}
   for activation_file in (ACTIVATIONS_DIR / "augmented").glob("*.pt"):
     topic = torch.load(activation_file)
     topic_grouped_by_prefix = topic.groupby("prefix")
-    test_topics[activation_file.stem] = topic_grouped_by_prefix
+    all_test_topics[activation_file.stem] = topic_grouped_by_prefix
+
+  train_accuracies = {}
+  # We intentionally iterate over the test topic names here.
+  for name in all_test_topics:
+    train_accuracies[name] = {layer: -1 for layer in LAYERS_TO_SAVE}
   
-  prefixes = next(iter(test_topics.values())).groups.keys()
+  prefixes = next(iter(all_test_topics.values())).groups.keys()
   test_accuracies = {}
-  for name in test_topics:
+  for name in all_test_topics:
     test_accuracies[name] = {prefix : {} for prefix in prefixes}
     for prefix in prefixes:
       for layer in LAYERS_TO_SAVE:
@@ -73,26 +72,26 @@ def train_eval_augmented(
   
 
   # Train and evaluate truth classifiers
-  for layer in LAYERS_TO_SAVE:
-    print(f"Layer: {layer}")
+  for curr_test_topic_name, curr_test_topic in all_test_topics.items():
+    curr_train_topics = [all_train_topics[name] for name in all_train_topics if name != curr_test_topic_name]
+    for layer in LAYERS_TO_SAVE:
+      print(f"Layer: {layer}")
+      input_size = curr_train_topics[0][layer_to_colname(layer)][0].shape[0]
 
-    truth_classifier = TruthClassifier(input_size).to(device)
+      truth_classifier = TruthClassifier(input_size).to(device)
+      train_loader = create_dataloader(curr_train_topics, layer)
+      train_truth_classifier(
+        truth_classifier, train_loader, device)
+      train_accuracies[curr_test_topic_name][layer] = [
+        evaluate_truth_classifier(truth_classifier, train_loader, device)
+      ]
+      torch.save(truth_classifier, results_dir / f"classifier_layer{layer}.pt")
 
-    train_loader = create_dataloader(train_topics, layer)
-    train_truth_classifier(
-      truth_classifier, train_loader, device)  # TODO: change
-    train_accuracies[layer] = [
-      evaluate_truth_classifier(truth_classifier, train_loader, device)
-    ]
-
-    for name, test_topic in test_topics.items():
-      for prefix, topic_group in test_topic:
-        print(f"Testing {name} with prefix {prefix}")
+      for prefix, topic_group in curr_test_topic:
+        print(f"Testing {curr_test_topic_name} with prefix {prefix}")
         test_loader = create_dataloader([topic_group], layer)
-        test_accuracies[name][prefix][layer] = evaluate_truth_classifier(
+        test_accuracies[curr_test_topic_name][prefix][layer] = evaluate_truth_classifier(
           truth_classifier, test_loader, device)
-
-    torch.save(truth_classifier, results_dir / f"classifier_layer{layer}.pt")
   
   train_accuracies_df = pd.DataFrame(train_accuracies)
   train_accuracies_df.to_csv(results_dir / "train_accuracies.csv")
@@ -128,7 +127,7 @@ def train_eval_original(
       truth_classifier = TruthClassifier(input_size).to(device)
 
       train_loader = create_dataloader(train_topics, layer)
-      train_truth_classifier(truth_classifier, train_loader, device, learning_rate=0.001)  # TODO: change
+      train_truth_classifier(truth_classifier, train_loader, device)
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, train_loader, device)
 
