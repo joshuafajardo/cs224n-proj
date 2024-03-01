@@ -25,15 +25,17 @@ def main(dataset: str) -> None:
   else:
     device = torch.device("cpu")
 
+  original_result_dir = session_dir / dataset / "original"
+  augmented_result_dir = session_dir / dataset / "augmented"
+
   match dataset:
     case "all":
-      train_eval_original(results_dir / "original", device)
-      train_eval_augmented(results_dir / "augmented", device)
+      train_eval_original(original_result_dir, device)
+      train_eval_augmented(augmented_result_dir, device)
     case "original":
-      train_eval_original(results_dir / "original", device)
-      train_eval_augmented(results_dir / "augmented", device)
+      train_eval_original(original_result_dir, device)
     case "augmented":
-      train_eval_augmented(results_dir / "augmented", device)
+      train_eval_augmented(augmented_result_dir, device)
     case _:
       raise ValueError("Invalid dataset name")
 
