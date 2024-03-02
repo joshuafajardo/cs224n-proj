@@ -1,5 +1,6 @@
 # train_and_evaluate.py
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -91,8 +92,24 @@ def train_eval_augmented(
       for prefix, topic_group in curr_test_topic:
         print(f"Testing {curr_test_topic_name} with prefix {prefix}")
         test_loader = create_dataloader([topic_group], layer)
-        test_accuracies[curr_test_topic_name][prefix][layer] = evaluate_truth_classifier(
-          truth_classifier, test_loader, device)
+        test_accuracies[curr_test_topic_name][prefix][layer] \
+          = evaluate_truth_classifier(truth_classifier, test_loader, device)
+  
+  # Compute test accuracies, averaged over topics
+  average_test_accuracies = {}
+  for prefix in prefixes:
+    average_test_accuracies[prefix] = {}
+    for layer in LAYERS_TO_SAVE:
+      all_test_topic_names = list(all_test_topics.keys())  # Consistent ordering
+      statement_counts = [
+        len(all_test_topics[name][prefix]) for name in all_test_topic_names
+      ]
+      accuracies = [
+        test_accuracies[name][prefix][layer] for name in all_test_topic_names
+      ]
+      average_test_accuracies[prefix][layer] = np.average(
+        accuracies, weights=statement_counts)
+  test_accuracies["average"] = average_test_accuracies
   
   save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
   for name in test_accuracies:
