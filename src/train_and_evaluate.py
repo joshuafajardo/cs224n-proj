@@ -97,12 +97,12 @@ def train_eval_augmented(
   
   # Compute test accuracies, averaged over topics
   average_test_accuracies = {}
+  all_test_topic_names = list(all_test_topics.keys())  # For consistent ordering
   for prefix in prefixes:
     average_test_accuracies[prefix] = {}
     for layer in LAYERS_TO_SAVE:
-      all_test_topic_names = list(all_test_topics.keys())  # Consistent ordering
       statement_counts = [
-        len(all_test_topics[name][prefix]) for name in all_test_topic_names
+        len(all_test_topics[name].get_group(prefix)) for name in all_test_topic_names
       ]
       accuracies = [
         test_accuracies[name][prefix][layer] for name in all_test_topic_names
