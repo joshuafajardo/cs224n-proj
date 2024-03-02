@@ -14,6 +14,7 @@ from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
 BATCH_SIZE = 32
+DECIMALS_TO_ROUND = 4
 
 def main(dataset: str) -> None:
   session_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
@@ -93,12 +94,10 @@ def train_eval_augmented(
         test_accuracies[curr_test_topic_name][prefix][layer] = evaluate_truth_classifier(
           truth_classifier, test_loader, device)
   
-  train_accuracies_df = pd.DataFrame(train_accuracies)
-  train_accuracies_df.to_csv(results_dir / "train_accuracies.csv")
-
+  save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
   for name in test_accuracies:
-    test_accuracies_df = pd.DataFrame(test_accuracies[name])
-    test_accuracies_df.to_csv(results_dir / f"test_accuracies_{name}.csv")
+    save_dict_to_csv(test_accuracies[name],
+                     results_dir / f"test_accuracies_{name}.csv")
 
 
 def train_eval_original(
@@ -138,10 +137,8 @@ def train_eval_original(
       torch.save(truth_classifier,
                  results_dir / f"classifier_{test_topic_name}_layer{layer}.pt")
 
-  train_accuracies_df = pd.DataFrame(train_accuracies)
-  test_accuracies_df = pd.DataFrame(test_accuracies)
-  train_accuracies_df.to_csv(results_dir / "train_accuracies.csv")
-  test_accuracies_df.to_csv(results_dir / "test_accuracies.csv")
+  save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
+  save_dict_to_csv(test_accuracies, results_dir / "test_accuracies.csv")
 
 
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
@@ -195,6 +192,12 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
   return correct / total
+
+def save_dict_to_csv(data: dict, file_path: pathlib.Path) -> None:
+  df = pd.DataFrame(data)
+  df = df.round(decimals=DECIMALS_TO_ROUND)
+  df.to_csv(file_path)
+
 
 
 if __name__ == "__main__":
