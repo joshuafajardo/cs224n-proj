@@ -26,8 +26,8 @@ def main(dataset: str) -> None:
   else:
     device = torch.device("cpu")
 
-  original_result_dir = session_dir / dataset / "original"
-  augmented_result_dir = session_dir / dataset / "augmented"
+  original_result_dir = session_dir / "original"
+  augmented_result_dir = session_dir / "augmented"
   original_result_dir.mkdir(parents=True, exist_ok=True)
   augmented_result_dir.mkdir(parents=True, exist_ok=True)
 
