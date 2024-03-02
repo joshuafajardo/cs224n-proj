@@ -153,6 +153,22 @@ def train_eval_original(
 
       torch.save(truth_classifier,
                  results_dir / f"classifier_{test_topic_name}_layer{layer}.pt")
+  
+  # Compute average accuracies
+  average_train_accuracies = {}
+  average_test_accuracies = {}
+  topic_names = list(topics.keys())  # For consistent ordering
+  statement_counts = [len(topics[name]) for name in topic_names]
+  for layer in LAYERS_TO_SAVE:
+    average_train_accuracies[layer] = np.average(
+      [train_accuracies[name][layer] for name in topic_names],
+      weights=statement_counts)
+    average_test_accuracies[layer] = np.average(
+      [test_accuracies[name][layer] for name in topic_names],
+      weights=statement_counts)
+  train_accuracies["average"] = average_train_accuracies
+  test_accuracies["average"] = average_test_accuracies
+  
 
   save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
   save_dict_to_csv(test_accuracies, results_dir / "test_accuracies.csv")
