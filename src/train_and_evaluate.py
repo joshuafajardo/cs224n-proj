@@ -14,7 +14,7 @@ from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
 BATCH_SIZE = 32
-DECIMALS_TO_ROUND = 4
+FLOAT_FORMAT = "%.4f"
 
 def main(dataset: str) -> None:
   session_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
@@ -195,8 +195,7 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
 
 def save_dict_to_csv(data: dict, file_path: pathlib.Path) -> None:
   df = pd.DataFrame(data)
-  df = df.round(decimals=DECIMALS_TO_ROUND)
-  df.to_csv(file_path)
+  df.to_csv(file_path, float_format=FLOAT_FORMAT)
 
 
 
