@@ -10,12 +10,12 @@ PREFIXES_FILE = pathlib.Path("data/prefixes.csv")
 
 TOPIC_NAMES=[
   # "generated_true_false.csv",
-  "facts_true_false.csv",  # Did not make the first characters lowercase.
-  "animals_true_false.csv",
-  "cities_true_false.csv",  # Note: Made some very minor modifications to fix unexpected r"^\s".
-  "companies_true_false.csv",
-  "elements_true_false.csv",
-  "inventions_true_false.csv"
+  "facts_true_false",  # Did not make the first characters lowercase.
+  "animals_true_false",
+  "cities_true_false",  # Note: Made some very minor modifications to fix unexpected r"^\s".
+  "companies_true_false",
+  "elements_true_false",
+  "inventions_true_false"
 ]
 
 
@@ -25,18 +25,17 @@ def main():
   augmented_dir.mkdir(parents=True, exist_ok=True)
 
   for topic_name in TOPIC_NAMES:
-    topic_dir = augmented_dir / topic_name
-    topic_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = augmented_dir / topic_name
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    topic_df = pd.read_csv(DATASETS_DIR / "original" / topic_name)
-    augmented_dfs = create_augmented_dfs(prefixes_df, topic_df, topic_name)
+    original_df = pd.read_csv(DATASETS_DIR / "original" / f"{topic_name}.csv")
+    augmented_dfs = create_augmented_dfs(prefixes_df, original_df, topic_name)
     for prefix in augmented_dfs:
-      augmented_dfs[prefix].to_csv(topic_dir / f"{prefix}")
+      augmented_dfs[prefix].to_csv(output_dir / f"{prefix}.csv")
 
 
-def create_augmented_dfs(prefixes_df: pd.DataFrame, topic_df: pd.DataFrame, topic_name: str) -> pd.DataFrame:
-  """"""  # TODO
-  base_augmented_df = topic_df.copy()
+def create_augmented_dfs(prefixes_df: pd.DataFrame, original_df: pd.DataFrame, topic_name: str) -> pd.DataFrame:
+  base_augmented_df = original_df.copy()
   base_augmented_df.rename(columns={"statement": "original_statement"}, inplace=True)
   base_augmented_df["augmented_statement"] = base_augmented_df["original_statement"]
 

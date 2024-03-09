@@ -33,7 +33,6 @@ def main():
 
   augmented_dataset_dir = DATASETS_DIR / "augmented"
   augmented_activations_dir = ACTIVATIONS_DIR / "augmented"
-  augmented_activations_dir.mkdir(parents=True, exist_ok=True)
   for topic_input_dir in augmented_dataset_dir.glob("*/"):
     save_augmented_activations(topic_input_dir, augmented_activations_dir, lm,
                                tokenizer, device)
@@ -43,22 +42,20 @@ def save_augmented_activations(input_dir: pathlib.Path,
                                output_dir: pathlib.Path,
                                lm: MistralForCausalLM,
                                tokenizer: LlamaTokenizer,
-                               device: torch.device,
-                               layers: list[int] = LAYERS_TO_SAVE) -> None:
+                               device: torch.device) -> None:
   output_dir.mkdir(parents=True, exist_ok=True)
   for csv_file in input_dir.glob("*.csv"):
     df = pd.read_csv(str(csv_file))
-    add_activations(df, lm, tokenizer, layers, device)
+    add_activations(df, lm, tokenizer, device)
     torch.save(df, output_dir / f"{csv_file.stem}.pt")
 
 
 def add_activations(df: pd.DataFrame,
                     llm: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
-                    layers: list[int],
                     device: torch.device) -> dict[int, torch.Tensor]:
   """Add activations to the DataFrame for the given statements."""
-  activations = {layer: [] for layer in layers}
+  activations = {layer: [] for layer in LAYERS_TO_SAVE}
   if "augmented_statement" in df:
     statements = df["augmented_statement"]
   else:
@@ -78,11 +75,11 @@ def add_activations(df: pd.DataFrame,
     # For every statement, we only want the activations of the last token.
     statement_indices = torch.arange(len(batched_statements))
     last_token_indices = torch.sum(tokenized_batch.attention_mask, dim=1) - 1
-    for layer in layers:
+    for layer in LAYERS_TO_SAVE:
       activations[layer].append(
         hidden_states[layer][statement_indices, last_token_indices, :].cpu())
 
-  for layer in layers:
+  for layer in LAYERS_TO_SAVE:
     activations[layer] = list(torch.cat(activations[layer], dim=0))
     df[layer_to_colname(layer)] = activations[layer]
 

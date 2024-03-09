@@ -44,6 +44,18 @@ def main(dataset: str) -> None:
       raise ValueError("Invalid dataset name")
 
 
+def train_eval_custom(
+    results_dir: pathlib.Path,
+    train_paths: list[pathlib.Path],
+    test_paths: list[pathlib.Path],
+    device: torch.device):
+  train_activations = []
+  for path in train_paths:
+    df = torch.load(path)
+    train_activations.append(df["activations"])
+
+
+
 def train_eval_augmented(
     results_dir: pathlib.Path,
     device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
