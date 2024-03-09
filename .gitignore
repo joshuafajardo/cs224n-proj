@@ -1,2 +1,3 @@
-data/activations_*/*/*.pt
+data/activations/**/*.pt
 *.tgz
+data/datasets/augmented/*
