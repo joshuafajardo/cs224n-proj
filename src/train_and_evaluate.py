@@ -54,17 +54,19 @@ def train_eval_augmented(
 
   # Set up test topics/results
   all_test_topics = {}
-  for activation_file in (ACTIVATIONS_DIR / "augmented").glob("*.pt"):
-    topic = torch.load(activation_file)
-    topic_grouped_by_prefix = topic.groupby("prefix")
-    all_test_topics[activation_file.stem] = topic_grouped_by_prefix
+  for topic_dir in (ACTIVATIONS_DIR / "augmented").glob("*/"):
+    topic_name = topic_dir.name
+    all_test_topics[topic_name] = {}
+    for prefix_csv in topic_dir.glob("*.pt"):
+      prefix = prefix_csv.stem
+      all_test_topics[topic_name][prefix] = torch.load(prefix_csv)
 
   train_accuracies = {}
   # We intentionally iterate over the test topic names here.
   for name in all_test_topics:
     train_accuracies[name] = {layer: -1 for layer in LAYERS_TO_SAVE}
   
-  prefixes = next(iter(all_test_topics.values())).groups.keys()
+  prefixes = next(iter(all_test_topics.values())).keys()
   test_accuracies = {}
   for name in all_test_topics:
     test_accuracies[name] = {prefix : {} for prefix in prefixes}
@@ -89,9 +91,9 @@ def train_eval_augmented(
       ]
       torch.save(truth_classifier, results_dir / f"classifier_layer{layer}.pt")
 
-      for prefix, topic_group in curr_test_topic:
+      for prefix, df in curr_test_topic:
         print(f"Testing {curr_test_topic_name} with prefix {prefix}")
-        test_loader = create_dataloader([topic_group], layer)
+        test_loader = create_dataloader([df], layer)
         test_accuracies[curr_test_topic_name][prefix][layer] \
           = evaluate_truth_classifier(truth_classifier, test_loader, device)
   
@@ -102,7 +104,7 @@ def train_eval_augmented(
     average_test_accuracies[prefix] = {}
     for layer in LAYERS_TO_SAVE:
       statement_counts = [
-        len(all_test_topics[name].get_group(prefix)) for name in all_test_topic_names
+        len(all_test_topics[name][prefix]) for name in all_test_topic_names
       ]
       accuracies = [
         test_accuracies[name][prefix][layer] for name in all_test_topic_names
