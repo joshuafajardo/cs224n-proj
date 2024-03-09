@@ -34,7 +34,9 @@ def main():
   augmented_dataset_dir = DATASETS_DIR / "augmented"
   augmented_activations_dir = ACTIVATIONS_DIR / "augmented"
   for topic_input_dir in augmented_dataset_dir.glob("*/"):
-    save_augmented_activations(topic_input_dir, augmented_activations_dir, lm,
+    topic_name = topic_input_dir.stem
+    save_augmented_activations(topic_input_dir,
+                               augmented_activations_dir / topic_name, lm,
                                tokenizer, device)
 
 
