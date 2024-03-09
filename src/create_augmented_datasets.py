@@ -60,17 +60,6 @@ def create_augmented_dfs(prefixes_df: pd.DataFrame, topic_df: pd.DataFrame, topi
                                           "original_statement"]]
   return augmented_dfs
 
-  # augmented_df = prefixes_df.merge(augmented_df, how="cross")
-  # augmented_df["augmented_statement"] = augmented_df["prefix"] + " " \
-  #                                         + augmented_df["augmented_statement"]
-  # augmented_df = augmented_df[[
-  #   "augmented_statement",
-  #   "label",
-  #   "prefix",
-  #   "original_statement"
-  # ]]
-  # return augmented_df
-
 
 if __name__ == "__main__":
   main()

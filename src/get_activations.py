@@ -26,27 +26,36 @@ def main():
   lm = lm.to(device)
   print("loaded model")
   
-  original_dataset_dir = ACTIVATIONS_DIR / "original"
-  original_dataset_dir.mkdir(parents=True, exist_ok=True)
-  for topic_csv in (original_dataset_dir).glob("*.csv"):
-    df = pd.read_csv(str(topic_csv))
-    add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
-    torch.save(df, original_dataset_dir / f"{topic_csv.stem}.pt")
+  original_dataset_dir = DATASETS_DIR / "original"
+  original_activations_dir = ACTIVATIONS_DIR / "original"
+  save_augmented_activations(original_dataset_dir, original_activations_dir,
+                             lm, tokenizer, device)
 
-  augmented_dataset_dir = ACTIVATIONS_DIR / "augmented"
-  original_dataset_dir.mkdir(parents=True, exist_ok=True)
-  for topic_input_dir in (augmented_dataset_dir).glob("*/"):
-    topic_output_dir = augmented_dataset_dir / topic_input_dir.name
-    topic_output_dir.mkdir(parents=True, exist_ok=True)
-    for prefix_csv in topic_input_dir.glob("*.csv"):
-      df = pd.read_csv(str(prefix_csv))
-      add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
-      torch.save(df, topic_output_dir / f"{prefix_csv.stem}.pt")
+  augmented_dataset_dir = DATASETS_DIR / "augmented"
+  augmented_activations_dir = ACTIVATIONS_DIR / "augmented"
+  augmented_activations_dir.mkdir(parents=True, exist_ok=True)
+  for topic_input_dir in augmented_dataset_dir.glob("*/"):
+    save_augmented_activations(topic_input_dir, augmented_activations_dir, lm,
+                               tokenizer, device)
+
+
+def save_augmented_activations(input_dir: pathlib.Path,
+                               output_dir: pathlib.Path,
+                               lm: MistralForCausalLM,
+                               tokenizer: LlamaTokenizer,
+                               device: torch.device,
+                               layers: list[int] = LAYERS_TO_SAVE) -> None:
+  output_dir.mkdir(parents=True, exist_ok=True)
+  for csv_file in input_dir.glob("*.csv"):
+    df = pd.read_csv(str(csv_file))
+    add_activations(df, lm, tokenizer, layers, device)
+    torch.save(df, output_dir / f"{csv_file.stem}.pt")
+
 
 def add_activations(df: pd.DataFrame,
                     llm: MistralForCausalLM,
                     tokenizer: LlamaTokenizer,
-                    layers: int,
+                    layers: list[int],
                     device: torch.device) -> dict[int, torch.Tensor]:
   """Add activations to the DataFrame for the given statements."""
   activations = {layer: [] for layer in layers}
