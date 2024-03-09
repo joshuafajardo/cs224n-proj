@@ -1,5 +1,6 @@
 # train_and_evaluate.py
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -14,6 +15,7 @@ from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
 BATCH_SIZE = 32
+FLOAT_FORMAT = "%.4f"
 
 def main(dataset: str) -> None:
   session_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
@@ -25,8 +27,8 @@ def main(dataset: str) -> None:
   else:
     device = torch.device("cpu")
 
-  original_result_dir = session_dir / dataset / "original"
-  augmented_result_dir = session_dir / dataset / "augmented"
+  original_result_dir = session_dir / "original"
+  augmented_result_dir = session_dir / "augmented"
   original_result_dir.mkdir(parents=True, exist_ok=True)
   augmented_result_dir.mkdir(parents=True, exist_ok=True)
 
@@ -52,17 +54,19 @@ def train_eval_augmented(
 
   # Set up test topics/results
   all_test_topics = {}
-  for activation_file in (ACTIVATIONS_DIR / "augmented").glob("*.pt"):
-    topic = torch.load(activation_file)
-    topic_grouped_by_prefix = topic.groupby("prefix")
-    all_test_topics[activation_file.stem] = topic_grouped_by_prefix
+  for topic_dir in (ACTIVATIONS_DIR / "augmented").glob("*/"):
+    topic_name = topic_dir.name
+    all_test_topics[topic_name] = {}
+    for prefix_csv in topic_dir.glob("*.pt"):
+      prefix = prefix_csv.stem
+      all_test_topics[topic_name][prefix] = torch.load(prefix_csv)
 
   train_accuracies = {}
   # We intentionally iterate over the test topic names here.
   for name in all_test_topics:
     train_accuracies[name] = {layer: -1 for layer in LAYERS_TO_SAVE}
   
-  prefixes = next(iter(all_test_topics.values())).groups.keys()
+  prefixes = next(iter(all_test_topics.values())).keys()
   test_accuracies = {}
   for name in all_test_topics:
     test_accuracies[name] = {prefix : {} for prefix in prefixes}
@@ -87,18 +91,32 @@ def train_eval_augmented(
       ]
       torch.save(truth_classifier, results_dir / f"classifier_layer{layer}.pt")
 
-      for prefix, topic_group in curr_test_topic:
+      for prefix, df in curr_test_topic:
         print(f"Testing {curr_test_topic_name} with prefix {prefix}")
-        test_loader = create_dataloader([topic_group], layer)
-        test_accuracies[curr_test_topic_name][prefix][layer] = evaluate_truth_classifier(
-          truth_classifier, test_loader, device)
+        test_loader = create_dataloader([df], layer)
+        test_accuracies[curr_test_topic_name][prefix][layer] \
+          = evaluate_truth_classifier(truth_classifier, test_loader, device)
   
-  train_accuracies_df = pd.DataFrame(train_accuracies)
-  train_accuracies_df.to_csv(results_dir / "train_accuracies.csv")
-
+  # Compute test accuracies, averaged over topics
+  average_test_accuracies = {}
+  all_test_topic_names = list(all_test_topics.keys())  # For consistent ordering
+  for prefix in prefixes:
+    average_test_accuracies[prefix] = {}
+    for layer in LAYERS_TO_SAVE:
+      statement_counts = [
+        len(all_test_topics[name][prefix]) for name in all_test_topic_names
+      ]
+      accuracies = [
+        test_accuracies[name][prefix][layer] for name in all_test_topic_names
+      ]
+      average_test_accuracies[prefix][layer] = np.average(
+        accuracies, weights=statement_counts)
+  test_accuracies["average"] = average_test_accuracies
+  
+  save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
   for name in test_accuracies:
-    test_accuracies_df = pd.DataFrame(test_accuracies[name])
-    test_accuracies_df.to_csv(results_dir / f"test_accuracies_{name}.csv")
+    save_dict_to_csv(test_accuracies[name],
+                     results_dir / f"test_accuracies_{name}.csv")
 
 
 def train_eval_original(
@@ -137,11 +155,25 @@ def train_eval_original(
 
       torch.save(truth_classifier,
                  results_dir / f"classifier_{test_topic_name}_layer{layer}.pt")
+  
+  # Compute average accuracies
+  average_train_accuracies = {}
+  average_test_accuracies = {}
+  topic_names = list(topics.keys())  # For consistent ordering
+  statement_counts = [len(topics[name]) for name in topic_names]
+  for layer in LAYERS_TO_SAVE:
+    average_train_accuracies[layer] = np.average(
+      [train_accuracies[name][layer] for name in topic_names],
+      weights=statement_counts)
+    average_test_accuracies[layer] = np.average(
+      [test_accuracies[name][layer] for name in topic_names],
+      weights=statement_counts)
+  train_accuracies["average"] = average_train_accuracies
+  test_accuracies["average"] = average_test_accuracies
+  
 
-  train_accuracies_df = pd.DataFrame(train_accuracies)
-  test_accuracies_df = pd.DataFrame(test_accuracies)
-  train_accuracies_df.to_csv(results_dir / "train_accuracies.csv")
-  test_accuracies_df.to_csv(results_dir / "test_accuracies.csv")
+  save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
+  save_dict_to_csv(test_accuracies, results_dir / "test_accuracies.csv")
 
 
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
@@ -195,6 +227,11 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
   return correct / total
+
+def save_dict_to_csv(data: dict, file_path: pathlib.Path) -> None:
+  df = pd.DataFrame(data)
+  df.to_csv(file_path, float_format=FLOAT_FORMAT)
+
 
 
 if __name__ == "__main__":

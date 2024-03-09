@@ -25,16 +25,23 @@ def main():
   lm = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
   lm = lm.to(device)
   print("loaded model")
+  
+  original_dataset_dir = ACTIVATIONS_DIR / "original"
+  original_dataset_dir.mkdir(parents=True, exist_ok=True)
+  for topic_csv in (original_dataset_dir).glob("*.csv"):
+    df = pd.read_csv(str(topic_csv))
+    add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
+    torch.save(df, original_dataset_dir / f"{topic_csv.stem}.pt")
 
-  for dataset in ["original", "augmented"]:
-    curr_activation_dir = ACTIVATIONS_DIR / dataset
-    curr_activation_dir.mkdir(parents=True, exist_ok=True)
-    for topic_csv in (DATASETS_DIR / dataset).glob("*.csv"):
-      print(f"Getting activations for {topic_csv}")
-      df = pd.read_csv(str(topic_csv))
+  augmented_dataset_dir = ACTIVATIONS_DIR / "augmented"
+  original_dataset_dir.mkdir(parents=True, exist_ok=True)
+  for topic_input_dir in (augmented_dataset_dir).glob("*/"):
+    topic_output_dir = augmented_dataset_dir / topic_input_dir.name
+    topic_output_dir.mkdir(parents=True, exist_ok=True)
+    for prefix_csv in topic_input_dir.glob("*.csv"):
+      df = pd.read_csv(str(prefix_csv))
       add_activations(df, lm, tokenizer, LAYERS_TO_SAVE, device)
-      torch.save(df, curr_activation_dir / f"{topic_csv.stem}.pt")
-  print(f"Last dataframe created: {df}")
+      torch.save(df, topic_output_dir / f"{prefix_csv.stem}.pt")
 
 def add_activations(df: pd.DataFrame,
                     llm: MistralForCausalLM,
