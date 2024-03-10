@@ -44,16 +44,18 @@ def main(dataset: str) -> None:
       raise ValueError("Invalid dataset name")
 
 
-def train_eval_custom(
+def train_eval_both_augmented(
     results_dir: pathlib.Path,
-    train_paths: list[pathlib.Path],
-    test_paths: list[pathlib.Path],
-    device: torch.device):
-  train_activations = []
-  for path in train_paths:
-    df = torch.load(path)
-    train_activations.append(df["activations"])
-
+    train_topic_names: list[str],
+    train_prefixes: list[str],
+    test_topic_names: list[str],
+    test_prefixes: list[str],
+    device: torch.device
+    ignore_test_affirms=True):
+  for topic_name in train_topic_names:
+    for prefix in train_prefixes:
+      activations = torch.load(ACTIVATIONS_DIR / topic_name / f"{prefix}.pt")
+      
 
 
 def train_eval_augmented(
@@ -191,7 +193,7 @@ def train_eval_original(
 def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
   inputs = pd.concat([topic[layer_to_colname(layer)] for topic in topics])
   inputs = torch.stack(list(inputs.values))
-  labels = torch.cat([torch.tensor(topic["label"].values) for topic in topics])
+  labels = torch.cat([torch.tensor(topic["original_label"].values) for topic in topics])
   labels = labels.unsqueeze(1).float()
 
   return torch.utils.data.DataLoader(
