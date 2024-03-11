@@ -119,7 +119,7 @@ def train_eval_both_augmented(
   test_accuracies = {}
   average_test_accuracies = {}
   for prefix in test_prefixes:
-    test_accuracies[prefix] = {}
+    average_test_accuracies[prefix] = {}
     for layer in LAYERS_TO_SAVE:
       average_test_accuracies[prefix][layer] = [0, 0]  # (correct, total)
 
