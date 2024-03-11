@@ -40,7 +40,7 @@ def create_augmented_dfs(prefixes_df: pd.DataFrame, original_df: pd.DataFrame, t
                                     "label": "original_label"}, inplace=True)
   base_augmented_df["augmented_statement"] = base_augmented_df["original_statement"]
 
-  topics_to_decapitalize = {"animals_true_false.csv", "elements_true_false.csv"}
+  topics_to_decapitalize = {"animals_true_false", "elements_true_false"}
   if topic_name in topics_to_decapitalize:
     base_augmented_df["augmented_statement"] = \
       base_augmented_df["augmented_statement"].str.replace(
