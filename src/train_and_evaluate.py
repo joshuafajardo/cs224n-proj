@@ -18,6 +18,59 @@ BATCH_SIZE = 32
 MISTRAL_HIDDEN_SIZE = 4096
 FLOAT_FORMAT = "%.4f"
 
+TRAIN_PREFIXES = [
+  "It is true that",
+  "It is false that",
+  "It must be true that",
+  "It must be false that",
+  "It should be the case that",
+  "It should not be the case that",
+  "It could be true that",
+  "It's probably not true that",
+  "I know it's true that",
+  "I know it's false that",
+  "I wouldn't doubt that",
+  "I highly doubt that",
+  "I firmly believe that",
+  "I do not believe that",
+  "I wouldn't be surprised to find that",
+  "I would be shocked to find that",
+  "I'm convinced that",
+  "I'm not convinced that",
+  "I think it's possible that",
+  "I think it's unlikely that",
+  "Not to be certain, but I think that",
+  "Not to be certain, but I doubt that",
+  "If I had to guess, I would say that",
+  "If I had to guess, I would deny that",
+]
+
+TEST_PREFIXES = [
+  "I'm 0% certain that",
+  "I'm 70% certain that",
+  "I'm 90% certain that",
+  "I'm 100% certain that",
+]
+
+TRAIN_TOPICS = [
+  "generated_true_false",
+  "facts_true_false",
+  "animals_true_false",
+  "cities_true_false",
+  "companies_true_false",
+  "elements_true_false",
+  "inventions_true_false"
+]
+
+TEST_TOPICS = [
+  "facts_true_false",
+  "animals_true_false",
+  "cities_true_false",
+  "companies_true_false",
+  "elements_true_false",
+  "inventions_true_false"
+]
+
 def main(dataset: str) -> None:
   session_name = f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
   session_dir = BASE_RESULTS_DIR / session_name
@@ -44,55 +97,10 @@ def main(dataset: str) -> None:
     case "both_augmented":
       train_eval_augmented(
         augmented_result_dir,
-        [
-          "generated_true_false",
-          "facts_true_false",
-          "animals_true_false",
-          "cities_true_false",
-          "companies_true_false",
-          "elements_true_false",
-          "inventions_true_false"
-        ],
-        [
-          "It is true that",
-          "It is false that",
-          "It must be true that",
-          "It must be false that",
-          "It should be the case that",
-          "It should not be the case that",
-          "It could be true that",
-          "It's probably not true that",
-          "I know it's true that",
-          "I know it's false that",
-          "I wouldn't doubt that",
-          "I highly doubt that",
-          "I firmly believe that",
-          "I do not believe that",
-          "I wouldn't be surprised to find that",
-          "I would be shocked to find that",
-          "I'm convinced that",
-          "I'm not convinced that",
-          "I think it's possible that",
-          "I think it's unlikely that",
-          "Not to be certain, but I think that",
-          "Not to be certain, but I doubt that",
-          "If I had to guess, I would say that",
-          "If I had to guess, I would deny that",
-        ],
-        [
-          "facts_true_false",
-          "animals_true_false",
-          "cities_true_false",
-          "companies_true_false",
-          "elements_true_false",
-          "inventions_true_false"
-        ],
-        [
-          "I'm 0% certain that",
-          "I'm 70% certain that",
-          "I'm 90% certain that",
-          "I'm 100% certain that",
-        ],
+        TRAIN_TOPICS,
+        TRAIN_PREFIXES,
+        TEST_TOPICS,
+        TEST_PREFIXES,
         device)
     case _:
       raise ValueError("Invalid dataset name")
