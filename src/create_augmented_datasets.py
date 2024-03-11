@@ -50,11 +50,12 @@ def create_augmented_dfs(prefixes_df: pd.DataFrame, original_df: pd.DataFrame, t
       )
 
   augmented_dfs = {}
-  for prefix in prefixes_df["prefix"]:
+  for _, row in prefixes_df.iterrows():
+    prefix = row["prefix"]
+    affirms = row["affirms"]
     curr_df = base_augmented_df.copy()
     curr_df["augmented_statement"] = prefix + " " + curr_df["augmented_statement"]
-    curr_df["augmented_label"] = \
-      (curr_df["original_label"] - prefixes_df["affirms"]) % 2
+    curr_df["augmented_label"] = int((curr_df["original_label"] - affirms) % 2)
     curr_df["prefix"] = prefix
     augmented_dfs[prefix] = curr_df[[
       "augmented_statement",
