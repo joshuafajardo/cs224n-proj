@@ -9,7 +9,7 @@ DATASETS_DIR = pathlib.Path("data/datasets")
 PREFIXES_FILE = pathlib.Path("data/prefixes.csv")
 
 TOPIC_NAMES=[
-  # "generated_true_false.csv",
+  # "generated_true_false",
   "facts_true_false",  # Did not make the first characters lowercase.
   "animals_true_false",
   "cities_true_false",  # Note: Made some very minor modifications to fix unexpected r"^\s".
@@ -36,7 +36,8 @@ def main():
 
 def create_augmented_dfs(prefixes_df: pd.DataFrame, original_df: pd.DataFrame, topic_name: str) -> pd.DataFrame:
   base_augmented_df = original_df.copy()
-  base_augmented_df.rename(columns={"statement": "original_statement"}, inplace=True)
+  base_augmented_df.rename(columns={"statement": "original_statement",
+                                    "label": "original_label"}, inplace=True)
   base_augmented_df["augmented_statement"] = base_augmented_df["original_statement"]
 
   topics_to_decapitalize = {"animals_true_false.csv", "elements_true_false.csv"}
@@ -52,11 +53,16 @@ def create_augmented_dfs(prefixes_df: pd.DataFrame, original_df: pd.DataFrame, t
   for prefix in prefixes_df["prefix"]:
     curr_df = base_augmented_df.copy()
     curr_df["augmented_statement"] = prefix + " " + curr_df["augmented_statement"]
+    curr_df["augmented_label"] = \
+      (curr_df["original_label"] - prefixes_df["affirms"]) % 2
     curr_df["prefix"] = prefix
-    augmented_dfs[prefix] = curr_df[["augmented_statement",
-                                          "label",
-                                          "prefix",
-                                          "original_statement"]]
+    augmented_dfs[prefix] = curr_df[[
+      "augmented_statement",
+      "augmented_label",
+      "prefix",
+      "original_statement",
+      "original_label"
+    ]]
   return augmented_dfs
 
 

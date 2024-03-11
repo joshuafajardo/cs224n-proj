@@ -15,6 +15,7 @@ from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
 BATCH_SIZE = 32
+MISTRAL_HIDDEN_SIZE = 4096
 FLOAT_FORMAT = "%.4f"
 
 def main(dataset: str) -> None:
@@ -40,6 +41,59 @@ def main(dataset: str) -> None:
       train_eval_original(original_result_dir, device)
     case "augmented":
       train_eval_augmented(augmented_result_dir, device)
+    case "both_augmented":
+      train_eval_augmented(
+        augmented_result_dir,
+        [
+          "generated_true_false",
+          "facts_true_false",
+          "animals_true_false",
+          "cities_true_false",
+          "companies_true_false",
+          "elements_true_false",
+          "inventions_true_false"
+        ],
+        [
+          "It is true that",
+          "It is false that",
+          "It must be true that",
+          "It must be false that",
+          "It should be the case that",
+          "It should not be the case that",
+          "It could be true that",
+          "It's probably not true that",
+          "I know it's true that",
+          "I know it's false that",
+          "I wouldn't doubt that",
+          "I highly doubt that",
+          "I firmly believe that",
+          "I do not believe that",
+          "I wouldn't be surprised to find that",
+          "I would be shocked to find that",
+          "I'm convinced that",
+          "I'm not convinced that",
+          "I think it's possible that",
+          "I think it's unlikely that",
+          "Not to be certain, but I think that",
+          "Not to be certain, but I doubt that",
+          "If I had to guess, I would say that",
+          "If I had to guess, I would deny that",
+        ],
+        [
+          "facts_true_false",
+          "animals_true_false",
+          "cities_true_false",
+          "companies_true_false",
+          "elements_true_false",
+          "inventions_true_false"
+        ],
+        [
+          "I'm 0% certain that",
+          "I'm 70% certain that",
+          "I'm 90% certain that",
+          "I'm 100% certain that",
+        ],
+        device)
     case _:
       raise ValueError("Invalid dataset name")
 
@@ -50,12 +104,57 @@ def train_eval_both_augmented(
     train_prefixes: list[str],
     test_topic_names: list[str],
     test_prefixes: list[str],
-    device: torch.device
-    ignore_test_affirms=True):
-  for topic_name in train_topic_names:
-    for prefix in train_prefixes:
-      activations = torch.load(ACTIVATIONS_DIR / topic_name / f"{prefix}.pt")
+    device: torch.device,
+    ignore_test_affirms: bool = True):
+
+  train_accuracies = {}
+  test_accuracies = {}
+  average_test_accuracies = {}
+  for prefix in test_prefixes:
+    for layer in LAYERS_TO_SAVE:
+      average_test_accuracies[prefix][layer] = [0, 0]  # (correct, total)
+
+  for test_topic_name in test_topic_names:
+    train_accuracies[test_topic_name] = {}
+    test_accuracies[test_topic_name] = {}
+
+    curr_train_topic_names = [name for name in train_topic_names if name != test_topic_name]
+    curr_train_dfs = []
+    for train_topic_name in curr_train_topic_names:
+      for prefix in train_prefixes:
+        curr_train_dfs.append(
+          torch.load(ACTIVATIONS_DIR / "augmented" / train_topic_name / f"{prefix}.pt")
+        )
+
+    for layer in LAYERS_TO_SAVE:
+      train_loader = create_dataloader(curr_train_dfs, layer,
+                                       use_augmented_labels=True)
+      truth_classifier = TruthClassifier(MISTRAL_HIDDEN_SIZE).to(device)
+      train_truth_classifier(truth_classifier, train_loader, device)
+      train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
+        truth_classifier, train_loader, device)
       
+      for prefix in test_prefixes:
+        test_df = torch.load(
+          ACTIVATIONS_DIR / "augmented" / test_topic_name / f"{prefix}.pt")
+        test_loader = create_dataloader([test_df], layer,
+                                        use_augmented_labels=ignore_test_affirms)
+        correct, total = evaluate_truth_classifier(
+          truth_classifier, test_loader, device, return_correct_total_counts=True)
+        test_accuracies[test_topic_name][prefix][layer] = correct / total
+        average_test_accuracies[prefix][layer][0] += correct
+        average_test_accuracies[prefix][layer][1] += total
+  
+  for prefix in test_prefixes:
+    for layer in LAYERS_TO_SAVE:
+      average_test_accuracies[prefix][layer] = \
+        average_test_accuracies[prefix][layer][0] / average_test_accuracies[prefix][layer][1]
+  test_accuracies["average"] = average_test_accuracies
+  
+  save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
+  for name in test_accuracies:
+    save_dict_to_csv(test_accuracies[name],
+                     results_dir / f"test_accuracies_{name}.csv")
 
 
 def train_eval_augmented(
@@ -190,10 +289,15 @@ def train_eval_original(
   save_dict_to_csv(test_accuracies, results_dir / "test_accuracies.csv")
 
 
-def create_dataloader(topics: list[dict], layer) -> torch.utils.data.Dataset:
+def create_dataloader(
+    topics: list[pd.DataFrame],
+    layer: int,
+    use_augmented_labels: bool = False) -> torch.utils.data.Dataset:
   inputs = pd.concat([topic[layer_to_colname(layer)] for topic in topics])
   inputs = torch.stack(list(inputs.values))
-  labels = torch.cat([torch.tensor(topic["original_label"].values) for topic in topics])
+  labels_to_use = "augmented_label" if use_augmented_labels else "original_label"
+  labels = torch.cat(
+    [torch.tensor(topic[labels_to_use].values) for topic in topics])
   labels = labels.unsqueeze(1).float()
 
   return torch.utils.data.DataLoader(
@@ -227,7 +331,8 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
 
 def evaluate_truth_classifier(truth_classifier: TruthClassifier,
                               loader: torch.utils.data.DataLoader,
-                              device: torch.device) -> None:
+                              device: torch.device,
+                              return_correct_total_counts=False) -> None:
   truth_classifier.to(device)
   truth_classifier.eval()
   correct = 0
@@ -240,7 +345,10 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       predictions = (outputs > 0.5).float()
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
-  return correct / total
+  if return_correct_total_counts:
+    return correct, total
+  else:
+    return correct / total
 
 def save_dict_to_csv(data: dict, file_path: pathlib.Path) -> None:
   df = pd.DataFrame(data)
@@ -253,6 +361,7 @@ if __name__ == "__main__":
     prog="train_and_evaluate.py",
     description="Train and evaluate various truth classifiers.")
   arg_parser.add_argument("-d", "--dataset", type=str, default="all",
-                          help="Dataset to use: all, original, or augmented")
+                          help="Dataset to use: all, original, augmented, or " +
+                            "both_augmented")
   args = arg_parser.parse_args()
   main(args.dataset)
