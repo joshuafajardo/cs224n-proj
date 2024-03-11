@@ -53,7 +53,7 @@ TEST_PREFIXES = [
 ]
 
 TRAIN_TOPICS = [
-  "generated_true_false",
+  # "generated_true_false",
   "facts_true_false",
   "animals_true_false",
   "cities_true_false",
