@@ -95,7 +95,7 @@ def main(dataset: str) -> None:
     case "augmented":
       train_eval_augmented(augmented_result_dir, device)
     case "both_augmented":
-      train_eval_augmented(
+      train_eval_both_augmented(
         augmented_result_dir,
         TRAIN_TOPICS,
         TRAIN_PREFIXES,
