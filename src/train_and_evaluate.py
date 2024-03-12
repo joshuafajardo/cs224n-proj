@@ -134,12 +134,15 @@ def train_eval_both_augmented(
         curr_train_dfs.append(
           torch.load(ACTIVATIONS_DIR / "augmented" / train_topic_name / f"{prefix}.pt")
         )
+    
+    for prefix in test_prefixes:
+      test_accuracies[test_topic_name][prefix] = {}
 
     for layer in LAYERS_TO_SAVE:
       train_loader = create_dataloader(curr_train_dfs, layer,
                                        use_augmented_labels=True)
       truth_classifier = TruthClassifier(MISTRAL_HIDDEN_SIZE).to(device)
-      train_truth_classifier(truth_classifier, train_loader, device)
+      train_truth_classifier(truth_classifier, train_loader, device, epochs=1)
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, train_loader, device)
       
