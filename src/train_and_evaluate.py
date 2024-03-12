@@ -147,8 +147,8 @@ def train_eval_both_augmented(
       num_epochs = 5
       train_loaders = create_sampled_training_dataloaders(
         curr_train_dfs, layer, num_dataloaders=num_epochs)
-      for train_loader in train_loaders:
-        train_truth_classifier(truth_classifier, train_loader, device, epochs=1)
+      train_truth_classifier_multiple_loaders(
+        truth_classifier, train_loaders, device)
       
       all_train_dfs = sum(curr_train_dfs, [])  # Flattens a list of lists
       all_train_dfs_dataloader = create_dataloader(all_train_dfs, layer,
@@ -351,6 +351,31 @@ def create_dataloader(
   return torch.utils.data.DataLoader(
     torch.utils.data.TensorDataset(inputs, labels),
     batch_size=BATCH_SIZE, shuffle=True)
+
+
+def train_truth_classifier_multiple_loaders(
+    truth_classifier: TruthClassifier,
+    loaders: list[torch.utils.data.DataLoader],
+    device: torch.device,
+    learning_rate: float = 0.001) -> None:
+  truth_classifier.to(device)
+  truth_classifier.train()
+  optimizer = torch.optim.Adam(truth_classifier.parameters(), lr=learning_rate)
+  loss_func = nn.BCELoss()
+
+  for epoch_num in range(len(loaders)):
+    epoch_loss = 0.0
+    loader = loaders[epoch_num]
+    for inputs, labels in loader:
+      inputs = inputs.to(device)
+      labels = labels.to(device)
+      truth_classifier.zero_grad()
+      outputs = truth_classifier(inputs)
+      curr_loss = loss_func(outputs, labels)
+      curr_loss.backward()
+      optimizer.step()
+      epoch_loss += curr_loss.item()
+    print(f"Epoch {epoch_num + 1} training loss: {epoch_loss / len(loader)}")
 
 
 def train_truth_classifier(truth_classifier: TruthClassifier,
