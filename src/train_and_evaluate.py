@@ -148,7 +148,7 @@ def train_eval_both_augmented(
       train_loaders = create_sampled_training_dataloaders(
         curr_train_dfs, layer, num_dataloaders=num_epochs)
       train_truth_classifier_multiple_loaders(
-        truth_classifier, train_loaders, device, learning_rate=0.1)
+        truth_classifier, train_loaders, device, learning_rate=0.01)
       
       all_train_dfs = sum(curr_train_dfs, [])  # Flattens a list of lists
       all_train_dfs_dataloader = create_dataloader(all_train_dfs, layer,
