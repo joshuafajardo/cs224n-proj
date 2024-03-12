@@ -418,13 +418,16 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       inputs = inputs.to(device)
       labels = labels.to(device)
       outputs = truth_classifier(inputs)
+      print(f"Evaluation outputs: {outputs}")
       predictions = (outputs > 0.5).float()
+      print(f"Evaluation predictions: {predictions}")
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
   if return_correct_total_counts:
     return correct, total
   else:
     return correct / total
+
 
 def save_dict_to_csv(data: dict, file_path: pathlib.Path) -> None:
   df = pd.DataFrame(data)
