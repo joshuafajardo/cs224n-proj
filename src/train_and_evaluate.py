@@ -83,8 +83,10 @@ def main(dataset: str) -> None:
 
   original_result_dir = session_dir / "original"
   augmented_result_dir = session_dir / "augmented"
+  both_augmented_result_dir = session_dir / "both_augmented"
   original_result_dir.mkdir(parents=True, exist_ok=True)
   augmented_result_dir.mkdir(parents=True, exist_ok=True)
+  both_augmented_result_dir.mkdir(parents=True, exist_ok=True)
 
   match dataset:
     case "all":
@@ -96,7 +98,7 @@ def main(dataset: str) -> None:
       train_eval_augmented(augmented_result_dir, device)
     case "both_augmented":
       train_eval_both_augmented(
-        augmented_result_dir,
+        both_augmented_result_dir,
         TRAIN_TOPICS,
         TRAIN_PREFIXES,
         TEST_TOPICS,
@@ -130,21 +132,29 @@ def train_eval_both_augmented(
     curr_train_topic_names = [name for name in train_topic_names if name != test_topic_name]
     curr_train_dfs = []
     for train_topic_name in curr_train_topic_names:
+      topic_dfs = []
       for prefix in train_prefixes:
-        curr_train_dfs.append(
+        topic_dfs.append(
           torch.load(ACTIVATIONS_DIR / "augmented" / train_topic_name / f"{prefix}.pt")
         )
+      curr_train_dfs.append(topic_dfs)
     
     for prefix in test_prefixes:
       test_accuracies[test_topic_name][prefix] = {}
 
     for layer in LAYERS_TO_SAVE:
-      train_loader = create_dataloader(curr_train_dfs, layer,
-                                       use_augmented_labels=True)
       truth_classifier = TruthClassifier(MISTRAL_HIDDEN_SIZE).to(device)
-      train_truth_classifier(truth_classifier, train_loader, device, epochs=1)
+      num_epochs = 5
+      train_loaders = create_sampled_training_dataloaders(
+        curr_train_dfs, layer, num_dataloaders=num_epochs)
+      for train_loader in train_loaders:
+        train_truth_classifier(truth_classifier, train_loader, device, epochs=1)
+      
+      all_train_dfs = sum(curr_train_dfs, [])  # Flattens a list of lists
+      all_train_dfs_dataloader = create_dataloader(all_train_dfs, layer,
+                                                   use_augmented_labels=True)
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
-        truth_classifier, train_loader, device)
+        truth_classifier, all_train_dfs_dataloader, device)
       
       for prefix in test_prefixes:
         test_df = torch.load(
@@ -300,6 +310,32 @@ def train_eval_original(
   save_dict_to_csv(train_accuracies, results_dir / "train_accuracies.csv")
   save_dict_to_csv(test_accuracies, results_dir / "test_accuracies.csv")
 
+
+def create_sampled_training_dataloaders(
+    topics: list[list[pd.DataFrame]],  # List of topics, each containing a list of dataframes for each prefix
+    layer: int,
+    num_dataloaders: int) -> dict[int, torch.utils.data.Dataset]:
+  dataloaders = []
+  for i in range(num_dataloaders):
+    inputs = []
+    labels = []
+    for topic in topics:
+      topic_length = len(topic[0])
+      num_prefixes = len(topic)
+      samples = np.random.randint(0, high=num_prefixes, size=topic_length)
+      for prefix_num in range(num_prefixes):
+        chosen_rows = topic[prefix_num][prefix_num == samples]
+        inputs.append(torch.tensor(chosen_rows[layer_to_colname(layer)].values))
+        labels.append(torch.tensor(chosen_rows["augmented_label"].values))
+    inputs = torch.cat(inputs)
+    labels = torch.cat(labels).unsqueeze(1).float()
+    dataloaders.append(torch.utils.DataLoader(
+      torch.utils.data.TensorDataset(inputs, labels),
+      batch_size=BATCH_SIZE, shuffle=True
+    ))
+  return dataloaders
+
+    
 
 def create_dataloader(
     topics: list[pd.DataFrame],
