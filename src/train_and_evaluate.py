@@ -145,14 +145,17 @@ def train_eval_both_augmented(
     for layer in LAYERS_TO_SAVE:
       truth_classifier = TruthClassifier(MISTRAL_HIDDEN_SIZE).to(device)
       num_epochs = 5
-      train_loaders = create_sampled_training_dataloaders(
-        curr_train_dfs, layer, num_dataloaders=num_epochs)
-      train_truth_classifier_multiple_loaders(
-        truth_classifier, train_loaders, device, learning_rate=10)
+      # TODO: Uncomment this later
+      # train_loaders = create_sampled_training_dataloaders(
+      #   curr_train_dfs, layer, num_dataloaders=num_epochs)
+      # train_truth_classifier_multiple_loaders(
+      #   truth_classifier, train_loaders, device, learning_rate=10)
       
       all_train_dfs = sum(curr_train_dfs, [])  # Flattens a list of lists
       all_train_dfs_dataloader = create_dataloader(all_train_dfs, layer,
                                                    use_augmented_labels=True)
+      train_truth_classifier(
+        truth_classifier, all_train_dfs_dataloader, device, epochs=5)  # TODO: Remove later
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, all_train_dfs_dataloader, device)
       
