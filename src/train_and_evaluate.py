@@ -325,7 +325,8 @@ def create_sampled_training_dataloaders(
       samples = np.random.randint(0, high=num_prefixes, size=topic_length)
       for prefix_num in range(num_prefixes):
         chosen_rows = topic[prefix_num][prefix_num == samples]
-        inputs.append(torch.tensor(chosen_rows[layer_to_colname(layer)].values))
+        # inputs.append(torch.tensor(chosen_rows[layer_to_colname(layer)]))
+        inputs.append(torch.stack(chosen_rows[layer_to_colname(layer)]))
         labels.append(torch.tensor(chosen_rows["augmented_label"].values))
     inputs = torch.cat(inputs)
     labels = torch.cat(labels).unsqueeze(1).float()
