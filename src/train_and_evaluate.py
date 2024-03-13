@@ -155,7 +155,6 @@ def train_eval_both_augmented(
                                                    use_augmented_labels=True)
       train_truth_classifier(
         truth_classifier, all_train_dfs_dataloader, device, epochs=5)  # TODO: Remove later
-      print("Evaluating on all training data: ")
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, all_train_dfs_dataloader, device)
       
@@ -164,7 +163,6 @@ def train_eval_both_augmented(
           ACTIVATIONS_DIR / "augmented" / test_topic_name / f"{prefix}.pt")
         test_loader = create_dataloader([test_df], layer,
                                         use_augmented_labels=False)
-        print("Evaluating on test data: ")
         correct, total = evaluate_truth_classifier(
           truth_classifier, test_loader, device, return_correct_total_counts=True)
         test_accuracies[test_topic_name][prefix][layer] = correct / total
@@ -419,9 +417,7 @@ def evaluate_truth_classifier(truth_classifier: TruthClassifier,
       inputs = inputs.to(device)
       labels = labels.to(device)
       outputs = truth_classifier(inputs)
-      print(f"Evaluation outputs: {outputs}")
       predictions = (outputs > 0.5).float()
-      print(f"Evaluation predictions: {predictions}")
       total += labels.size(0)
       correct += (predictions == labels).sum().item()
   if return_correct_total_counts:
