@@ -14,7 +14,7 @@ from truth_classifier import TruthClassifier
 from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
-BATCH_SIZE = 2097152
+BATCH_SIZE = 4096
 MISTRAL_HIDDEN_SIZE = 4096
 FLOAT_FORMAT = "%.4f"
 
