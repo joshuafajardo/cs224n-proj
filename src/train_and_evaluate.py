@@ -155,7 +155,7 @@ def train_eval_both_augmented(
       all_train_dfs_dataloader = create_dataloader(all_train_dfs, layer,
                                                    use_augmented_labels=True)
       train_truth_classifier(
-        truth_classifier, all_train_dfs_dataloader, device, epochs=10)  # TODO: Remove later
+        truth_classifier, all_train_dfs_dataloader, device, epochs=7)  # TODO: Remove later
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, all_train_dfs_dataloader, device)
       
