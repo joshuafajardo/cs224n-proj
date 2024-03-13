@@ -158,6 +158,7 @@ def train_eval_both_augmented(
         truth_classifier, all_train_dfs_dataloader, device, epochs=10)  # TODO: Remove later
       train_accuracies[test_topic_name][layer] = evaluate_truth_classifier(
         truth_classifier, all_train_dfs_dataloader, device)
+      print("Test accuracy for topic", test_topic_name, "layer", layer, "is", train_accuracies[test_topic_name][layer])
       
       for prefix in test_prefixes:
         test_df = torch.load(
