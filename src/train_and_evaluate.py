@@ -14,7 +14,8 @@ from truth_classifier import TruthClassifier
 from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
-BATCH_SIZE = 4096
+TRAINING_BATCH_SIZE = 4096
+TEST_BATCH_SIZE = 262144
 MISTRAL_HIDDEN_SIZE = 4096
 FLOAT_FORMAT = "%.4f"
 
@@ -162,6 +163,7 @@ def train_eval_both_augmented(
         test_df = torch.load(
           ACTIVATIONS_DIR / "augmented" / test_topic_name / f"{prefix}.pt")
         test_loader = create_dataloader([test_df], layer,
+                                        batch_size=TEST_BATCH_SIZE,
                                         use_augmented_labels=False)
         correct, total = evaluate_truth_classifier(
           truth_classifier, test_loader, device, return_correct_total_counts=True)
@@ -333,7 +335,7 @@ def create_sampled_training_dataloaders(
     labels = torch.cat(labels).unsqueeze(1).float()
     dataloaders.append(torch.utils.data.DataLoader(
       torch.utils.data.TensorDataset(inputs, labels),
-      batch_size=BATCH_SIZE, shuffle=True
+      batch_size=TRAINING_BATCH_SIZE, shuffle=True
     ))
   return dataloaders
 
@@ -342,6 +344,7 @@ def create_sampled_training_dataloaders(
 def create_dataloader(
     topics: list[pd.DataFrame],
     layer: int,
+    batch_size = TRAINING_BATCH_SIZE,
     use_augmented_labels: bool = False) -> torch.utils.data.Dataset:
   inputs = pd.concat([topic[layer_to_colname(layer)] for topic in topics])
   inputs = torch.stack(list(inputs.values))
@@ -352,7 +355,7 @@ def create_dataloader(
 
   return torch.utils.data.DataLoader(
     torch.utils.data.TensorDataset(inputs, labels),
-    batch_size=BATCH_SIZE, shuffle=True)
+    batch_size=batch_size, shuffle=True)
 
 
 def train_truth_classifier_multiple_loaders(
