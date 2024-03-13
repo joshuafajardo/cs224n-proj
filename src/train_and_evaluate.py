@@ -14,7 +14,7 @@ from truth_classifier import TruthClassifier
 from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
-BATCH_SIZE = 4096
+BATCH_SIZE = 65536
 MISTRAL_HIDDEN_SIZE = 4096
 FLOAT_FORMAT = "%.4f"
 
@@ -114,8 +114,7 @@ def train_eval_both_augmented(
     train_prefixes: list[str],
     test_topic_names: list[str],
     test_prefixes: list[str],
-    device: torch.device,
-    ignore_test_affirms: bool = True):
+    device: torch.device):
 
   train_accuracies = {}
   test_accuracies = {}
@@ -164,7 +163,7 @@ def train_eval_both_augmented(
         test_df = torch.load(
           ACTIVATIONS_DIR / "augmented" / test_topic_name / f"{prefix}.pt")
         test_loader = create_dataloader([test_df], layer,
-                                        use_augmented_labels=ignore_test_affirms)
+                                        use_augmented_labels=False)
         print("Evaluating on test data: ")
         correct, total = evaluate_truth_classifier(
           truth_classifier, test_loader, device, return_correct_total_counts=True)
