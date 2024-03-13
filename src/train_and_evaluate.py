@@ -393,6 +393,8 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
   optimizer = torch.optim.Adam(truth_classifier.parameters(), lr=learning_rate)
   loss_func = nn.BCELoss()
 
+  loader.to(device)
+
   for epoch in range(epochs):
     epoch_loss = 0.0
     for inputs, labels in loader:
