@@ -13,7 +13,7 @@ class TruthClassifier(nn.Module):
     self.fc4 = nn.Linear(64, 1)
     self.relu = nn.ReLU()
     self.sigmoid = nn.Sigmoid()
-    self.dropout = nn.Dropout(0.4)
+    self.dropout = nn.Dropout(0.3)
   
   def forward(self, x: torch.Tensor) -> torch.Tensor:
     x = self.dropout(self.relu(self.fc1(x)))
