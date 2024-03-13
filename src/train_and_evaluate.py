@@ -398,8 +398,8 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
   for epoch in range(epochs):
     epoch_loss = 0.0
     for inputs, labels in loader:
-      inputs = inputs.to(device)
-      labels = labels.to(device)
+      # inputs = inputs.to(device)
+      # labels = labels.to(device)
       truth_classifier.zero_grad()
       outputs = truth_classifier(inputs)
       curr_loss = loss_func(outputs, labels)
