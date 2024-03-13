@@ -14,7 +14,7 @@ from truth_classifier import TruthClassifier
 from get_activations import ACTIVATIONS_DIR, LAYERS_TO_SAVE, layer_to_colname
 
 BASE_RESULTS_DIR = pathlib.Path("results")
-BATCH_SIZE = 1024
+BATCH_SIZE = 4096
 MISTRAL_HIDDEN_SIZE = 4096
 FLOAT_FORMAT = "%.4f"
 
@@ -393,13 +393,11 @@ def train_truth_classifier(truth_classifier: TruthClassifier,
   optimizer = torch.optim.Adam(truth_classifier.parameters(), lr=learning_rate)
   loss_func = nn.BCELoss()
 
-  loader.to(device)
-
   for epoch in range(epochs):
     epoch_loss = 0.0
     for inputs, labels in loader:
-      # inputs = inputs.to(device)
-      # labels = labels.to(device)
+      inputs = inputs.to(device)
+      labels = labels.to(device)
       truth_classifier.zero_grad()
       outputs = truth_classifier(inputs)
       curr_loss = loss_func(outputs, labels)
