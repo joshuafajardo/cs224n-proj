@@ -349,7 +349,12 @@ def create_dataloader(
     use_augmented_labels: bool = False) -> torch.utils.data.Dataset:
   inputs = pd.concat([topic[layer_to_colname(layer)] for topic in topics])
   inputs = torch.stack(list(inputs.values))
-  labels_to_use = "augmented_label" if use_augmented_labels else "original_label"
+  if use_augmented_labels:
+    labels_to_use = "augmented_label"
+  elif "original_label" in topics[0]:
+    labels_to_use = "original_label"
+  else:
+    labels_to_use = "label"
   labels = torch.cat(
     [torch.tensor(topic[labels_to_use].values) for topic in topics])
   labels = labels.unsqueeze(1).float()
