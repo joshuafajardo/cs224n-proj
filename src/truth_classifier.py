@@ -5,7 +5,7 @@ import torch.nn as nn
 
 
 class TruthClassifier(nn.Module):
-  def __init__(self, input_size: int):
+  def __init__(self, input_size: int, dropout_prob: float = 0.2):
     super(TruthClassifier, self).__init__()
     self.fc1 = nn.Linear(input_size, 256)
     self.fc2 = nn.Linear(256, 128)
@@ -13,7 +13,7 @@ class TruthClassifier(nn.Module):
     self.fc4 = nn.Linear(64, 1)
     self.relu = nn.ReLU()
     self.sigmoid = nn.Sigmoid()
-    self.dropout = nn.Dropout(0.2)
+    self.dropout = nn.Dropout(dropout_prob)
   
   def forward(self, x: torch.Tensor) -> torch.Tensor:
     x = self.dropout(self.relu(self.fc1(x)))
