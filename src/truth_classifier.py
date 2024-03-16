@@ -5,7 +5,7 @@ import torch.nn as nn
 
 
 class TruthClassifier(nn.Module):
-  def __init__(self, input_size: int, dropout_prob: float = 0.4):
+  def __init__(self, input_size: int, dropout_prob: float = 0.2):
     super(TruthClassifier, self).__init__()
     self.fc1 = nn.Linear(input_size, 256)
     self.fc2 = nn.Linear(256, 128)

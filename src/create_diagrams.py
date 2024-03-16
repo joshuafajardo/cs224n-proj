@@ -24,7 +24,7 @@ test_accuracies = {
 vmin = min([np.min(test_accuracies[5]), np.min(test_accuracies[20])])
 vmax = max([np.max(test_accuracies[5]), np.max(test_accuracies[20])])
 
-figure, (ax5, ax20) = plt.subplots(1, 2)
+figure, (ax5, ax20) = plt.subplots(1, 2, figsize=(10, 5))
 im5 = ax5.imshow(test_accuracies[5], vmin=vmin, vmax=vmax)
 im20 = ax20.imshow(test_accuracies[20], vmin=vmin, vmax=vmax)
 
@@ -44,11 +44,13 @@ figure.colorbar(im5, ax=[ax5, ax20])
 ax5.set_title("Test Accuracies, 5 Epochs")
 ax20.set_title("Test Acccuracies, 20 Epochs")
 
-ax5.set_xlabel("Numerical Value in Prefix: \"I am X% certain that\"")
-ax20.set_xlabel("Numerical Value in Prefix \"I am X% certain that\"")
+ax5.set_xlabel("Value in Prefix: \"I am X% certain that\"")
+ax20.set_xlabel("Value in Prefix \"I am X% certain that\"")
 
 ax5.set_ylabel("LLM Layer Number")
-ax20.set_ylabel("LLM Layer Number")
 
-
+plt.savefig("heatmap.png",bbox_inches="tight")
 plt.show()
+
+
+
